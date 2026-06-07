@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
+    "dev": "bun run --bun next dev",
+    "build": "bun run --bun next build",
+    "start": "bun run --bun next start",
+    "lint": "bun run --bun eslint"
   },
   "dependencies": {
     "next": "16.2.7",
@@ -15,7 +15,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
+    "@types/bun": "^1.3.14",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
