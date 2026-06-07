@@ -1,7 +1,19 @@
 {
   "name": "bene-chan-agent",
-  "version": "0.1.0",
-  "private": true,
+  "description": "A my personal AI Agent to help me in a day use.",
+  "version": "0.0.1",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gsbenevides2/bene-chan-agent.git",
+    "directory": "."
+  },
+  "author": {
+    "email": "contato@gui.dev.br",
+    "name": "Guilherme da Silva Benevides",
+    "url": "https://github.com/gsbenevides2/bene-chan-agent"
+  },
+  "private": false,
   "scripts": {
     "dev": "bun run --bun next dev",
     "build": "bun run --bun next build",
@@ -9,6 +21,8 @@
     "lint": "bun run --bun eslint"
   },
   "dependencies": {
+    "@elysia/eden": "^1.4.10",
+    "@elysia/openapi": "^1.4.15",
     "next": "16.2.7",
     "react": "19.2.4",
     "react-dom": "19.2.4"
@@ -19,9 +33,11 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "daisyui": "^5.5.23",
+    "elysia": "^1.4.28",
     "eslint": "^9",
     "eslint-config-next": "16.2.7",
     "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.8.3",
     "tailwindcss": "^4",
     "typescript": "^5"
   },
