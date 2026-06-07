@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import QuickBar from "@/app/components/QuickBar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,7 +29,10 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       data-theme="dark"
     >
-      <body className="flex flex-col h-full overflow-hidden">{children}</body>
+      <body className="flex flex-col h-full overflow-hidden">
+        <QuickBar />
+        {children}
+      </body>
     </html>
   );
 }
