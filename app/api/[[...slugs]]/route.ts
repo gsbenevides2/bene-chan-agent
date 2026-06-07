@@ -1,7 +1,7 @@
 import { Elysia } from "elysia";
 import { openapi } from "@elysia/openapi";
-import { healthcheck } from "@/app/modules/healthcheck";
-import { getProjectInfo } from "@/app/utils/getProjectInfo";
+import { healthcheck } from "@/src/modules/healthcheck";
+import { getProjectInfo } from "@/src/utils/getProjectInfo";
 
 const app = new Elysia({ prefix: "/api" })
   .use(
