@@ -50,7 +50,7 @@ export default function ChatInputBar({
           onKeyDown={handleKeyDown}
         />
         <button
-          className="top-8 right-3 absolute -translate-y-1/2 btn btn-circle btn-accent btn-sm"
+          className="top-8 right-3 absolute -translate-y-1/2 btn btn-circle btn-primary btn-sm"
           onClick={handleSend}
           disabled={!inputText.trim()}
         >
