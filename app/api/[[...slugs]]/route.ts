@@ -2,6 +2,7 @@ import { Elysia } from "elysia";
 import { openapi } from "@elysia/openapi";
 import { healthcheck } from "@/src/modules/healthcheck";
 import { getProjectInfo } from "@/src/utils/getProjectInfo";
+import { chat } from "@/src/modules/chat";
 
 const app = new Elysia({ prefix: "/api" })
   .use(
@@ -11,7 +12,8 @@ const app = new Elysia({ prefix: "/api" })
       },
     }),
   )
-  .use(healthcheck);
+  .use(healthcheck)
+  .use(chat);
 
 export const GET = app.fetch;
 export const POST = app.fetch;
