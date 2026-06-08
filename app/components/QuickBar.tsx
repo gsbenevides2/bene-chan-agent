@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Search, Command, Folder, Settings, ArrowRight, X } from "lucide-react";
+import { useEventManager } from "@/app/utils/eventManager";
+import { OPEN_NEW_CHAT_MODAL_EVENT } from "@/app/components/NewChatModal";
 
 interface Command {
   id: string;
@@ -16,6 +18,7 @@ export default function QuickBar() {
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const eventManager = useEventManager();
 
   const onClose = useCallback(() => {
     setIsOpen(false);
@@ -29,7 +32,7 @@ export default function QuickBar() {
       description: "Iniciar uma nova conversa",
       category: "Chat",
       action: () => {
-        console.log("Novo chat iniciado");
+        eventManager.dispatchEvent(OPEN_NEW_CHAT_MODAL_EVENT);
         onClose();
       },
     },

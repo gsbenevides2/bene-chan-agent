@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import QuickBar from "@/app/components/QuickBar";
+import NewChatModal from "@/app/components/NewChatModal";
+import { CreateEventManager } from "@/app/utils/eventManager";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,8 +32,10 @@ export default function RootLayout({
       data-theme="dark"
     >
       <body className="flex flex-col h-full overflow-hidden">
-        <QuickBar />
         {children}
+        <CreateEventManager />
+        <QuickBar />
+        <NewChatModal />
       </body>
     </html>
   );

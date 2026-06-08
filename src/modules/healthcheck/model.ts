@@ -1,32 +1,18 @@
-import { t, type UnwrapSchema } from "elysia";
+import z from "zod";
 
 export const HealthCheckModel = {
-  healthcheckResponse: t.Object(
-    {
-      status: t.Const("ok", {
-        title: "Status",
-        description: "Status of the health check",
-      }),
-      timestamp: t.String({
-        title: "Timestamp",
-        description:
-          "ISO 8601 formatted timestamp of the health check response",
-        exemple: new Date().toISOString(),
-      }),
-    },
-    {
-      title: "HealthCheckResponse",
-      description: "Response schema for the health check endpoint",
-      exemple: {
-        status: "ok",
-        timestamp: new Date().toISOString(),
-      },
-    },
-  ),
+  healthcheckResponse: z.object({
+    status: z.literal("ok").meta({
+      title: "Status",
+      description: "Health status of the application",
+      example: "ok",
+    }),
+    timestamp: z.iso.datetime().meta({
+      title: "Timestamp",
+      description: "ISO timestamp of when the health check was performed",
+      example: "2024-06-01T12:00:00.000Z",
+    }),
+  }),
 } as const;
 
-export type HealthCheckModel = {
-  [k in keyof typeof HealthCheckModel]: UnwrapSchema<
-    (typeof HealthCheckModel)[k]
-  >;
-};
+export type HealthCheckModel = z.infer<typeof HealthCheckModel>;

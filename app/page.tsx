@@ -1,6 +1,15 @@
+"use client";
 import Image from "next/image";
+import Link from "next/link";
+import { useCallback } from "react";
+import { useEventManager } from "@/app/utils/eventManager";
+import { OPEN_NEW_CHAT_MODAL_EVENT } from "@/app/components/NewChatModal";
 
 export default function Home() {
+  const eventManager = useEventManager();
+  const openModal = useCallback(() => {
+    eventManager.dispatchEvent(OPEN_NEW_CHAT_MODAL_EVENT);
+  }, [eventManager]);
   return (
     <div className="flex flex-col flex-1 justify-center items-center">
       <main className="flex flex-col flex-1 justify-between items-center sm:items-start px-16 py-32 w-full max-w-4xl k">
@@ -20,8 +29,12 @@ export default function Home() {
             O que vamos fazer juntos hoje?
           </p>
           <div className="flex sm:flex-row flex-col gap-4">
-            <button className="btn btn-primary">Nova Conversa</button>
-            <button className="btn-adjacent">Ver Conversas Anteriores</button>
+            <button className="btn btn-primary" onClick={openModal}>
+              Nova Conversa
+            </button>
+            <Link href="/chats" className="btn-outline btn">
+              Ver Conversas Anteriores
+            </Link>
           </div>
         </div>
         <div className="flex sm:flex-row flex-col gap-4 font-medium text-base"></div>

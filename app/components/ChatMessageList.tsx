@@ -1,8 +1,8 @@
 "use client";
 
 import { useRef, useEffect } from "react";
-import { ChatMessage } from "@/app/types/chat";
 import ChatMessageBubble from "./ChatMessageBubble";
+import { ChatMessage } from "@/src/modules/chat/model";
 
 interface ChatMessageListProps {
   messages: ChatMessage[];
@@ -16,7 +16,7 @@ export default function ChatMessageList({ messages }: ChatMessageListProps) {
   }, [messages]);
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 space-y-4">
+    <div className="flex-1 space-y-4 p-4 overflow-y-auto">
       {messages.map((message) => (
         <ChatMessageBubble key={message.id} message={message} />
       ))}

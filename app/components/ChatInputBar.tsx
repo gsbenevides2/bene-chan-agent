@@ -5,13 +5,9 @@ import { Send } from "lucide-react";
 
 interface ChatInputBarProps {
   onSend: (text: string) => void;
-  placeholder?: string;
 }
 
-export default function ChatInputBar({
-  onSend,
-  placeholder = "Digite sua mensagem...",
-}: ChatInputBarProps) {
+export default function ChatInputBar({ onSend }: ChatInputBarProps) {
   const [inputText, setInputText] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -43,8 +39,8 @@ export default function ChatInputBar({
         <textarea
           ref={textareaRef}
           rows={1}
-          placeholder={placeholder}
-          className="pr-14 hover:border-base-400 focus:border-base-400 rounded-2xl focus:outline-none focus:ring-0 w-full min-h-20 max-h-40 overflow-y-hidden resize-none textarea textarea-bordered"
+          placeholder="Digite sua mensagem..."
+          className={`pr-14 hover:border-base-400 focus:border-base-400 rounded-2xl focus:outline-none focus:ring-0 w-full min-h-20 max-h-40 overflow-y-hidden resize-none textarea textarea-bordered`}
           value={inputText}
           onChange={handleChange}
           onKeyDown={handleKeyDown}

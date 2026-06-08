@@ -3,6 +3,9 @@ import { openapi } from "@elysia/openapi";
 import { healthcheck } from "@/src/modules/healthcheck";
 import { getProjectInfo } from "@/src/utils/getProjectInfo";
 import { chat } from "@/src/modules/chat";
+import cors from "@elysia/cors";
+
+export const dynamic = "force-dynamic";
 
 const app = new Elysia({ prefix: "/api" })
   .use(
@@ -12,11 +15,21 @@ const app = new Elysia({ prefix: "/api" })
       },
     }),
   )
+  .use(
+    cors({
+      origin: true,
+      credentials: true,
+    }),
+  )
   .use(healthcheck)
   .use(chat);
 
-export const GET = app.fetch;
-export const POST = app.fetch;
-export const PUT = app.fetch;
-export const DELETE = app.fetch;
-export const PATCH = app.fetch;
+export type App = typeof app;
+export const GET = app.handle;
+export const POST = app.handle;
+export const PUT = app.handle;
+export const DELETE = app.handle;
+export const PATCH = app.handle;
+export const UPGRADE = app.handle;
+export const HEAD = app.handle;
+export const OPTIONS = app.handle;
