@@ -6,16 +6,18 @@ import { Plus, Search, Filter } from "lucide-react";
 import ChatSessionsList from "@/app/components/ChatSessionsList";
 import { OPEN_NEW_CHAT_MODAL_EVENT } from "@/app/components/NewChatModal";
 import { useEventManager } from "@/app/utils/eventManager";
-import { ChatSession } from "@/src/modules/chat/model";
-import ChatSessionsSkeleton from "../components/ChatSessionsSkeleton";
-import { getApiClient } from "../utils/client";
+import { ChatSession } from "@/server/modules/chat/model";
+import ChatSessionsSkeleton from "@/app/components/ChatSessionsSkeleton";
+import { getApiClient } from "@/app/utils/client";
+import { useAlert } from "@/app/hooks/useAlert";
 
 export default function ChatsPage() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const eventManager = useEventManager();
   const [isLoading, setIsLoading] = useState(true);
-  const [chatSessions, setChatSessions] = useState<ChatSession[]>([]); // Aqui você carregaria as sessões reais
+  const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
+  const { warning, success, error } = useAlert();
 
   const handleSelectChat = (sessionId: string) => {
     console.log("Navegando para chat:", sessionId);
@@ -24,18 +26,44 @@ export default function ChatsPage() {
   };
 
   const handleDeleteChat = (sessionId: string) => {
-    console.log("Deletando chat:", sessionId);
-    // Aqui você implementaria a lógica real de deletar
-    // Por enquanto, apenas um alert
-    if (confirm("Tem certeza que deseja excluir esta conversa?")) {
-      alert(`Chat ${sessionId} foi excluído!`);
-    }
+    const api = getApiClient();
+    warning("Tem certeza que deseja excluir esta conversa?", {
+      title: "Confirmação de Exclusão",
+      confirmText: "Sim, excluir",
+      closeOnConfirm: false,
+      onConfirm: () => {
+        api
+          .chat({ sessionId })
+          .delete()
+          .then(() => {
+            success(`Chat ${sessionId} foi excluído!`);
+            setChatSessions((prev) =>
+              prev.filter((session) => session.id !== sessionId),
+            );
+          })
+          .catch(() => {
+            error(`Falha ao excluir o chat ${sessionId}. Tente novamente.`);
+          });
+      },
+    });
   };
 
   const handleRenameChat = (sessionId: string, newName: string) => {
-    console.log("Renomeando chat:", sessionId, "para:", newName);
-    // Aqui você implementaria a lógica real de renomear
-    alert(`Chat ${sessionId} renomeado para: "${newName}"`);
+    const api = getApiClient();
+    api
+      .chat({ sessionId })
+      .put({ title: newName })
+      .then(() => {
+        setChatSessions((prev) =>
+          prev.map((session) =>
+            session.id === sessionId ? { ...session, title: newName } : session,
+          ),
+        );
+        success("Chat renomeado com sucesso!");
+      })
+      .catch(() => {
+        error("Falha ao renomear o chat. Tente novamente.");
+      });
   };
 
   const handleCreateChat = () => {
@@ -45,7 +73,7 @@ export default function ChatsPage() {
   useEffect(() => {
     const api = getApiClient();
     api.chat.get().then((response) => {
-      if (response.data?.length) {
+      if (Array.isArray(response.data)) {
         setChatSessions(response.data);
         setIsLoading(false);
       }

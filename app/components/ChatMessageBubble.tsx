@@ -1,4 +1,4 @@
-import { ChatMessage } from "@/src/modules/chat/model";
+import { ChatMessage } from "@/server/modules/chat/model";
 import { Cog, CheckCircle } from "lucide-react";
 import { remark } from "remark";
 import html from "remark-html";

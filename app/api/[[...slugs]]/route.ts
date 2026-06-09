@@ -1,8 +1,8 @@
 import { Elysia } from "elysia";
 import { openapi } from "@elysia/openapi";
-import { healthcheck } from "@/src/modules/healthcheck";
-import { getProjectInfo } from "@/src/utils/getProjectInfo";
-import { chat } from "@/src/modules/chat";
+import { healthcheck } from "@/server/modules/healthcheck";
+import { getProjectInfo } from "@/server/utils/getProjectInfo";
+import { chat } from "@/server/modules/chat";
 import cors from "@elysia/cors";
 
 export const dynamic = "force-dynamic";

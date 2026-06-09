@@ -98,8 +98,8 @@ export const SendMessagePostParamSchema = z.object({
   }),
 });
 
-export const SendMessagePostResponseSchema = z.object({
-  event: z.string().meta({
+export const SendMessagePostResponseMessageSchema = z.object({
+  event: z.literal("message").meta({
     title: "Event",
     description: "The type of the event, e.g., 'message'",
     example: "message",
@@ -109,6 +109,41 @@ export const SendMessagePostResponseSchema = z.object({
     description: "The message data associated with the event",
   }),
 });
+export const SendMessagePostResponseErrorSchema = z.object({
+  event: z.literal("error").meta({
+    title: "Event",
+    description: "The type of the event, e.g., 'message'",
+    example: "message",
+  }),
+  data: z
+    .object({
+      code: z.string().meta({
+        title: "Error Code",
+        description: "A machine-readable error code",
+        example: "invalid_input",
+      }),
+      message: z.string().meta({
+        title: "Error Message",
+        description: "A human-readable error message",
+        example: "The input provided is invalid.",
+      }),
+    })
+    .meta({
+      title: "Data",
+      description: "The error data associated with the event",
+    }),
+});
+
+export const SendMessagePostResponseSchema = z
+  .union([
+    SendMessagePostResponseMessageSchema,
+    SendMessagePostResponseErrorSchema,
+  ])
+  .meta({
+    title: "Send Message Post Response",
+    description:
+      "The response schema for sending a message, which can be either a message event or an error event",
+  });
 
 // DELETE /chat/:sessionId
 export const DeleteChatSessionParamSchema = z.object({
@@ -127,6 +162,32 @@ export const DeleteChatSessionResponseSchema = z.object({
   }),
 });
 
+// PUT /chat/:sessionId
+// (Esquema para atualização de título da sessão, por exemplo)
+export const UpdateChatSessionParamSchema = z.object({
+  sessionId: z.uuidv4().meta({
+    title: "Session ID",
+    description: "The ID of the chat session to be updated",
+    example: "123e4567-e89b-12d3-a456-426614174000",
+  }),
+});
+
+export const UpdateChatSessionBodySchema = z.object({
+  title: z.string().nonoptional().meta({
+    title: "Chat Session Title",
+    description: "The new title of the chat session",
+    example: "Updated Chat Session Title",
+  }),
+});
+
+export const UpdateChatSessionResponseSchema = z.object({
+  success: z.boolean().meta({
+    title: "Success",
+    description: "Indicates whether the chat session was successfully updated",
+    example: true,
+  }),
+});
+
 export const ChatModel = {
   MessageSchema,
   SendMessagePostBodySchema,
@@ -137,7 +198,13 @@ export const ChatModel = {
   ListChatSessionsResponseSchema,
   DeleteChatSessionParamSchema,
   DeleteChatSessionResponseSchema,
+  UpdateChatSessionParamSchema,
+  UpdateChatSessionBodySchema,
+  UpdateChatSessionResponseSchema,
 };
 
 export type ChatMessage = z.infer<typeof MessageSchema>;
 export type ChatSession = z.infer<typeof ChatSessionSchema>;
+export type SendMessagePostReturn = z.infer<
+  typeof SendMessagePostResponseSchema
+>;

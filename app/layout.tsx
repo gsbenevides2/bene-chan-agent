@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import QuickBar from "@/app/components/QuickBar";
 import NewChatModal from "@/app/components/NewChatModal";
+import AlertModal from "@/app/components/AlertModal";
 import { CreateEventManager } from "@/app/utils/eventManager";
 
 const geistSans = Geist({
@@ -36,6 +37,7 @@ export default function RootLayout({
         <CreateEventManager />
         <QuickBar />
         <NewChatModal />
+        <AlertModal />
       </body>
     </html>
   );

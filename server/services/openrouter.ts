@@ -1,4 +1,4 @@
-import { ChatMessage } from "@/src/modules/chat/model";
+import { ChatMessage } from "@/server/modules/chat/model";
 import { OpenRouter } from "@openrouter/sdk";
 import Crypto from "crypto";
 

@@ -2,10 +2,16 @@
 import ChatHeader from "@/app/components/ChatHeader";
 import ChatMessageList from "@/app/components/ChatMessageList";
 import ChatInputBar from "@/app/components/ChatInputBar";
-import { useMessages } from "../hooks/chatMessages";
+import { useMessages } from "@/app/hooks/chatMessages";
+import { use } from "react";
 
-export default function ChatPage() {
-  const { messages, sendMessage } = useMessages();
+export default function ChatPage({
+  params,
+}: {
+  params: Promise<{ sessionId: string }>;
+}) {
+  const { sessionId } = use(params);
+  const { messages, sendMessage } = useMessages(sessionId);
 
   return (
     <main className="flex flex-col flex-1 h-full">

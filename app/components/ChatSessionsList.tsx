@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { MessageSquare, Trash2, Edit3 } from "lucide-react";
-import { ChatSession } from "@/src/modules/chat/model";
+import { ChatSession } from "@/server/modules/chat/model";
 
 interface ChatSessionsListProps {
   onSelectChat: (sessionId: string) => void;
@@ -37,7 +37,6 @@ export default function ChatSessionsList({
     setEditingSession(null);
     setEditName("");
   };
-
   return (
     <div className="bg-base-100 h-full">
       {/* Header */}

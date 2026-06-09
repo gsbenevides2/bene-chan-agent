@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Search, Command, Folder, Settings, ArrowRight, X } from "lucide-react";
 import { useEventManager } from "@/app/utils/eventManager";
 import { OPEN_NEW_CHAT_MODAL_EVENT } from "@/app/components/NewChatModal";
+import { useRouter } from "next/navigation";
 
 interface Command {
   id: string;
@@ -19,6 +20,7 @@ export default function QuickBar() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [isOpen, setIsOpen] = useState(false);
   const eventManager = useEventManager();
+  const router = useRouter();
 
   const onClose = useCallback(() => {
     setIsOpen(false);
@@ -37,52 +39,12 @@ export default function QuickBar() {
       },
     },
     {
-      id: "clear-history",
-      name: "Limpar Histórico",
-      description: "Apagar todo o histórico de conversas",
+      id: "history",
+      name: "Ver Histórico",
+      description: "Ver todo o histórico de conversas",
       category: "Chat",
       action: () => {
-        console.log("Histórico limpo");
-        onClose();
-      },
-    },
-    {
-      id: "export-chat",
-      name: "Exportar Chat",
-      description: "Salvar a conversa atual em arquivo",
-      category: "Chat",
-      action: () => {
-        console.log("Chat exportado");
-        onClose();
-      },
-    },
-    {
-      id: "open-settings",
-      name: "Configurações",
-      description: "Abrir painel de configurações",
-      category: "Sistema",
-      action: () => {
-        console.log("Configurações abertas");
-        onClose();
-      },
-    },
-    {
-      id: "toggle-theme",
-      name: "Alternar Tema",
-      description: "Trocar entre modo claro e escuro",
-      category: "Sistema",
-      action: () => {
-        console.log("Tema alternado");
-        onClose();
-      },
-    },
-    {
-      id: "keyboard-shortcuts",
-      name: "Atalhos do Teclado",
-      description: "Mostrar lista de atalhos disponíveis",
-      category: "Ajuda",
-      action: () => {
-        console.log("Atalhos mostrados");
+        router.push("/chats");
         onClose();
       },
     },

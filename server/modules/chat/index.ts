@@ -1,8 +1,12 @@
 import Elysia, { sse } from "elysia";
-import { ChatModel } from "./model";
+import { ChatModel, SendMessagePostReturn } from "./model";
 import Crypto from "crypto";
-import { OpenRouterService } from "@/src/services/openrouter";
+import { OpenRouterService } from "@/server/services/openrouter";
 import { ChatService } from "./service";
+
+export type MessageReturn = AsyncGenerator<
+  ReturnType<typeof sse<SendMessagePostReturn>>
+>;
 
 export const chat = new Elysia({
   prefix: "/chat",
@@ -58,9 +62,39 @@ export const chat = new Elysia({
       },
     },
   )
+  .put(
+    "/:sessionId",
+    async ({ body, params }) => {
+      await ChatService.updateChat(params.sessionId, body.title);
+      return {
+        success: true,
+      };
+    },
+    {
+      params: ChatModel.UpdateChatSessionParamSchema,
+      body: ChatModel.UpdateChatSessionBodySchema,
+      response: ChatModel.UpdateChatSessionResponseSchema,
+      detail: {
+        summary: "Update a chat session",
+        description: "Update the title of an existing chat session by its ID.",
+        tags: ["Chat"],
+      },
+    },
+  )
   .post(
     "/:sessionId/message",
-    async function* ({ body, params }) {
+    async function* ({ body, params }): MessageReturn {
+      const chatExists = await ChatService.chatExists(params.sessionId);
+      if (!chatExists) {
+        yield sse({
+          event: "error",
+          data: {
+            message: "Chat não encontrado!",
+            code: "CHAT_SESSION_NOT_FOUND",
+          },
+        });
+        return;
+      }
       yield sse({
         event: "message",
         data: {
