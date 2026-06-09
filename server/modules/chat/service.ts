@@ -1,6 +1,7 @@
 import { db } from "@/server/db";
-import { chatSessions } from "@/server/db/schema";
-import { count, eq } from "drizzle-orm";
+import { chatSessions, messages } from "@/server/db/schema";
+import { count, eq, sql } from "drizzle-orm";
+import { ChatMessage } from "./model";
 
 export class ChatService {
   static async createChat(title: string) {
@@ -32,5 +33,64 @@ export class ChatService {
       .update(chatSessions)
       .set({ title: newTitle })
       .where(eq(chatSessions.id, sessionId));
+  }
+
+  static async saveMessage(sessionId: string, message: ChatMessage) {
+    await db
+      .insert(messages)
+      .values({
+        id: message.id,
+        chatSessionId: sessionId,
+        role: message.role,
+        type: message.type,
+        text: message.text,
+        toolName: message.toolName,
+        toolArgs: message.toolArgs,
+        toolResult: message.toolResult,
+        timestamp: message.timestamp,
+      })
+      .onConflictDoUpdate({
+        target: messages.id,
+        set: {
+          role: message.role,
+          type: message.type,
+          text: message.text,
+          toolName: message.toolName,
+          toolArgs: message.toolArgs,
+          toolResult: message.toolResult,
+          timestamp: message.timestamp,
+        },
+      });
+  }
+  static async saveMultipleMessages(
+    sessionId: string,
+    messagesToSave: ChatMessage[],
+  ) {
+    const insertValues = messagesToSave.map((message) => ({
+      id: message.id,
+      chatSessionId: sessionId,
+      role: message.role,
+      type: message.type,
+      text: message.text,
+      toolName: message.toolName,
+      toolArgs: message.toolArgs,
+      toolResult: message.toolResult,
+      timestamp: message.timestamp,
+    }));
+    await db
+      .insert(messages)
+      .values(insertValues)
+      .onConflictDoUpdate({
+        target: messages.id,
+        set: {
+          role: sql`excluded.role`,
+          type: sql`excluded.type`,
+          text: sql`excluded.text`,
+          toolName: sql`excluded.tool_name`,
+          toolArgs: sql`excluded.tool_args`,
+          toolResult: sql`excluded.tool_result`,
+          timestamp: sql`excluded.timestamp`,
+        },
+      });
   }
 }

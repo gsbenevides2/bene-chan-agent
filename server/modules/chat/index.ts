@@ -95,19 +95,40 @@ export const chat = new Elysia({
         });
         return;
       }
+      const receivedMessageId = Crypto.randomUUID();
+      const receivedMessageTimestamp = new Date();
+      await ChatService.saveMessage(params.sessionId, {
+        id: receivedMessageId,
+        role: "user",
+        type: "text",
+        text: body.message,
+        timestamp: receivedMessageTimestamp,
+      });
       yield sse({
         event: "message",
         data: {
-          id: Crypto.randomUUID(),
+          id: receivedMessageId,
           role: "user",
           type: "text",
           text: body.message,
-          timestamp: Date.now(),
+          timestamp: receivedMessageTimestamp,
         },
       });
 
-      const response = OpenRouterService.streamChat(body.message);
+      const response = OpenRouterService.streamChat(
+        body.message,
+        async (finalMessages) => {
+          await ChatService.saveMultipleMessages(
+            params.sessionId,
+            finalMessages,
+          );
+        },
+      );
+      let lastMessageId = "";
       for await (const message of response) {
+        if (!lastMessageId) lastMessageId = message.id;
+        if (lastMessageId !== message.id) {
+        }
         yield sse({
           event: "message",
           data: message,

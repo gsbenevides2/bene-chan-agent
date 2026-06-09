@@ -52,9 +52,10 @@ export const MessageSchema = z.object({
     title: "Tool Result",
     description: "Result returned by the tool, if type is 'toolResult'",
   }),
-  timestamp: z.number().meta({
+  timestamp: z.date().meta({
     title: "Timestamp",
-    description: "Unix timestamp of when the message was created",
+    description: "The date and time when the message was created",
+    example: "2024-01-01T12:00:00Z",
   }),
 });
 

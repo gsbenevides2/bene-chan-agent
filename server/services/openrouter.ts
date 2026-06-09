@@ -5,6 +5,7 @@ import Crypto from "crypto";
 export class OpenRouterService {
   static async *streamChat(
     message: string,
+    receiveAllFinalMessages: (messages: ChatMessage[]) => void,
   ): AsyncGenerator<ChatMessage, void, unknown> {
     const apiKey = Bun.env.OPENROUTER_API_KEY;
     let currentChatId = Crypto.randomUUID();
@@ -21,7 +22,7 @@ export class OpenRouterService {
         stream: true,
       },
     });
-
+    const finalMessages: ChatMessage[] = [];
     for await (const chunk of stream) {
       const firstChoice = chunk.choices[0];
       if (!firstChoice) continue;
@@ -33,14 +34,26 @@ export class OpenRouterService {
       const content = firstChoice.delta.content;
       if (content) {
         messageString += content;
-        yield {
+        const message: ChatMessage = {
           id: currentChatId,
           role: currentRole,
           type: "text",
           text: messageString,
-          timestamp: Date.now(),
+          timestamp: new Date(),
         };
+        const hasInFinalMessages = finalMessages.some(
+          (msg) => msg.id === message.id,
+        );
+        if (!hasInFinalMessages) {
+          finalMessages.push(message);
+        } else {
+          const index = finalMessages.findIndex((msg) => msg.id === message.id);
+          finalMessages[index] = message;
+        }
+
+        yield message;
       }
     }
+    receiveAllFinalMessages(finalMessages);
   }
 }

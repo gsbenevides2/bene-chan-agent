@@ -84,13 +84,10 @@ export default function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
     );
   };
 
-  const formattedTimestamp = new Date(message.timestamp).toLocaleTimeString(
-    ["pt-BR"],
-    {
-      hour: "2-digit",
-      minute: "2-digit",
-    },
-  );
+  const formattedTimestamp = message.timestamp.toLocaleTimeString(["pt-BR"], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
   return (
     <div className={`chat ${isReceived ? "chat-start" : "chat-end"}`}>
