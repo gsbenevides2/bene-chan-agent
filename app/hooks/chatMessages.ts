@@ -1,10 +1,10 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { getApiClient } from "@/app/utils/client";
 import { ChatMessage } from "@/server/modules/chat/model";
 import { useAlert } from "./useAlert";
 
 export function useMessages(sessionId: string) {
-  console.log("Initializing useMessages with sessionId:", sessionId);
+  const [isLoading, setIsLoading] = useState(true);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const { error } = useAlert();
 
@@ -44,8 +44,32 @@ export function useMessages(sessionId: string) {
     [sessionId, error],
   );
 
-  return {
-    messages,
-    sendMessage,
-  };
+  useEffect(() => {
+    const apiClient = getApiClient();
+    apiClient
+      .chat({ sessionId })
+      .messages.get()
+      .then((response) => {
+        if (response.error) {
+          error("Erro ao carregar mensagens");
+          return;
+        }
+        setMessages(response.data);
+        setIsLoading(false);
+      })
+      .catch((error) => {
+        console.error("Error fetching messages:", error);
+        setIsLoading(false);
+      });
+  }, [error, sessionId]);
+
+  const values = useMemo(
+    () => ({
+      messages,
+      sendMessage,
+    }),
+    [messages, sendMessage],
+  );
+
+  return values;
 }

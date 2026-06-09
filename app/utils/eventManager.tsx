@@ -1,5 +1,5 @@
 "use client";
-import { useEffect } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 
 declare global {
   interface Window {
@@ -17,7 +17,10 @@ export function CreateEventManager() {
 }
 
 export function useEventManager() {
-  function dispatchEvent<T>(eventName: string, detail?: T) {
+  const dispatchEvent = useCallback(function <T>(
+    eventName: string,
+    detail?: T,
+  ) {
     if (!window.eventManager) {
       console.warn(
         "EventManager não encontrado. Certifique-se de que CreateEventManager está sendo usado.",
@@ -26,8 +29,8 @@ export function useEventManager() {
     }
     const event = new CustomEvent<T>(eventName, { detail });
     window.eventManager.dispatchEvent(event);
-  }
-  function listen<T>(
+  }, []);
+  const listen = useCallback(function listen<T>(
     eventName: string,
     callback: (event: CustomEvent<T>) => void,
   ) {
@@ -43,7 +46,12 @@ export function useEventManager() {
         eventName,
         callback as EventListener,
       );
-  }
+  }, []);
 
-  return { dispatchEvent, listen };
+  const values = useMemo(
+    () => ({ dispatchEvent, listen }),
+    [dispatchEvent, listen],
+  );
+
+  return values;
 }

@@ -62,6 +62,7 @@ export class ChatService {
         },
       });
   }
+
   static async saveMultipleMessages(
     sessionId: string,
     messagesToSave: ChatMessage[],
@@ -92,5 +93,24 @@ export class ChatService {
           timestamp: sql`excluded.timestamp`,
         },
       });
+  }
+
+  static async getMessages(sessionId: string): Promise<ChatMessage[]> {
+    const result = await db
+      .select()
+      .from(messages)
+      .where(eq(messages.chatSessionId, sessionId))
+      .orderBy(messages.timestamp);
+
+    return result.map((row) => ({
+      id: row.id,
+      role: row.role,
+      type: row.type,
+      text: row.text ?? undefined,
+      toolName: row.toolName ?? undefined,
+      toolArgs: row.toolArgs ?? undefined,
+      toolResult: row.toolResult ?? undefined,
+      timestamp: row.timestamp,
+    }));
   }
 }

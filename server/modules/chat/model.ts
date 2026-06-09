@@ -44,7 +44,7 @@ export const MessageSchema = z.object({
     description: "Name of the tool called, if type is 'toolCall'",
     example: "get_weather",
   }),
-  toolArgs: z.record(z.string(), z.unknown()).optional().meta({
+  toolArgs: z.any().optional().meta({
     title: "Tool Arguments",
     description: "Arguments passed to the tool, if type is 'toolCall'",
   }),
@@ -80,6 +80,20 @@ export const CreateChatSessionPostResponseSchema = z.object({
     description: "The ID of the newly created chat session",
     example: "123e4567-e89b-12d3-a456-426614174000",
   }),
+});
+
+// GET /chat/:sessionId/message
+export const GetMessagesParamSchema = z.object({
+  sessionId: z.uuidv4().meta({
+    title: "Session ID",
+    description: "The ID of the chat session to retrieve messages from",
+    example: "123e4567-e89b-12d3-a456-426614174000",
+  }),
+});
+
+export const GetMessagesResponseSchema = z.array(MessageSchema).meta({
+  title: "Get Messages Response",
+  description: "An array of messages in the chat session",
 });
 
 // POST /chat/:sessionId/message
@@ -191,6 +205,9 @@ export const UpdateChatSessionResponseSchema = z.object({
 
 export const ChatModel = {
   MessageSchema,
+  ChatSessionSchema,
+  GetMessagesParamSchema,
+  GetMessagesResponseSchema,
   SendMessagePostBodySchema,
   SendMessagePostParamSchema,
   SendMessagePostResponseSchema,

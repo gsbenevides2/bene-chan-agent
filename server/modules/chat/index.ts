@@ -81,6 +81,23 @@ export const chat = new Elysia({
       },
     },
   )
+  .get(
+    "/:sessionId/messages",
+    async ({ params }) => {
+      const messages = await ChatService.getMessages(params.sessionId);
+      return messages;
+    },
+    {
+      params: ChatModel.GetMessagesParamSchema,
+      response: ChatModel.GetMessagesResponseSchema,
+      detail: {
+        summary: "Get messages of a chat session",
+        description:
+          "Retrieve all messages associated with a specific chat session.",
+        tags: ["Chat"],
+      },
+    },
+  )
   .post(
     "/:sessionId/message",
     async function* ({ body, params }): MessageReturn {
