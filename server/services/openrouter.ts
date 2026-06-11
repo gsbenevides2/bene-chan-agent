@@ -1,10 +1,13 @@
 import { ChatMessage } from "@/server/modules/chat/model";
 import { OpenRouter } from "@openrouter/sdk";
-import { ChatMessages } from "@openrouter/sdk/models";
 import Crypto from "crypto";
 import { ChatService } from "../modules/chat/service";
 
 export class OpenRouterService {
+  static openRouter = new OpenRouter({
+    apiKey: Bun.env.OPENROUTER_API_KEY,
+  });
+
   static getFakeTool() {
     return [
       {
@@ -47,7 +50,6 @@ export class OpenRouterService {
     message: string,
     chatId: string,
   ): AsyncGenerator<ChatMessage, void, unknown> {
-    const apiKey = Bun.env.OPENROUTER_API_KEY;
     let currentChatId = Crypto.randomUUID();
     let currentRole: "user" | "assistant" = "assistant";
     let messageString = "";
@@ -56,10 +58,7 @@ export class OpenRouterService {
     let currentToolCallArgs = "";
     let lastMessageIsToolCall = false;
 
-    const openRouter = new OpenRouter({
-      apiKey,
-    });
-    const stream = await openRouter.chat.send({
+    const stream = await this.openRouter.chat.send({
       chatRequest: {
         model: "openai/gpt-4o",
         messages: [{ role: "user", content: message }],
@@ -142,6 +141,92 @@ export class OpenRouterService {
       }
     }
     await ChatService.saveMultipleMessages(chatId, finalMessages);
+    const hasToolCalls = finalMessages.some((msg) => msg.type === "toolCall");
+    if (hasToolCalls) {
+      const messages = await this.harness(chatId, finalMessages);
+      for await (const message of messages) {
+        yield message;
+      }
+    }
+  }
+  static async *harness(
+    chatId: string,
+    history: ChatMessage[],
+  ): AsyncGenerator<ChatMessage, void, unknown> {
+    const allToolCalls = history
+      .filter((msg) => msg.type === "toolCall")
+      .map((msg) => msg.toolId);
+    const allToolsResults = history
+      .filter((msg) => msg.type === "toolResult")
+      .map((msg) => msg.toolId);
+    const missingToolResults = allToolCalls.filter(
+      (toolCallId) => !allToolsResults.includes(toolCallId || ""),
+    );
+    if (!missingToolResults.length) {
+      return;
+    }
+    const results: ChatMessage[] = [];
+    for (const toolCallId of missingToolResults) {
+      const toolCallMessage = history.find(
+        (msg) => msg.type === "toolCall" && msg.toolId === toolCallId,
+      );
+      if (!toolCallMessage) continue;
+      const toolResult = await this.callTool(
+        toolCallMessage.toolName || "",
+        toolCallMessage.toolArgs,
+      );
+      const toolResultMessage: ChatMessage = {
+        id: Crypto.randomUUID(),
+        role: "assistant",
+        type: "toolResult",
+        text: "",
+        toolId: toolCallMessage.toolId,
+        toolName: toolCallMessage.toolName,
+        toolResult: toolResult,
+        toolArgs: toolCallMessage.toolArgs,
+        timestamp: new Date(),
+      };
+      yield toolResultMessage;
+      results.push(toolResultMessage);
+    }
+
+    await ChatService.saveMultipleMessages(chatId, results);
+  }
+
+  static async callTool(
+    toolName: string,
+    toolArgs: unknown,
+  ): Promise<{ success: boolean; result?: unknown; error?: string }> {
+    // Simula a execução da ferramenta
+    console.log(`Executando ferramenta: ${toolName} com argumentos:`, toolArgs);
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    if (toolName === "get_current_weather") {
+      const toolArgsA = toolArgs as { location: string };
+      return {
+        success: true,
+        result: {
+          location: toolArgsA.location,
+          temperature: "22°C",
+          condition: "Ensolarado",
+        },
+      };
+    } else if (toolName === "get_news_headlines") {
+      const toolArgsB = toolArgs as { category: string };
+      return {
+        success: true,
+        result: [
+          { title: "Notícia 1", category: toolArgsB.category },
+          { title: "Notícia 2", category: toolArgsB.category },
+          { title: "Notícia 3", category: toolArgsB.category },
+        ],
+      };
+    } else {
+      return {
+        success: false,
+        error: `Ferramenta desconhecida: ${toolName}`,
+      };
+    }
   }
   /*
   static transformHistory(history: ChatMessage[]): ChatMessages[] {

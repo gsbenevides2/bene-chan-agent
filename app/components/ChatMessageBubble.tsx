@@ -13,6 +13,8 @@ export default function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
   const isReceived = message.role === "assistant";
   const senderName = isReceived ? "Bene-chan" : "Você";
   const [openMessage, setOpenMessage] = useState(false);
+  const toogleMessageTypes = ["toolCall", "toolResult"];
+  const isToogled = toogleMessageTypes.includes(message.type);
 
   // Determinar estilo baseado no tipo da mensagem
   const getMessageStyle = () => {
@@ -97,24 +99,32 @@ export default function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
       return (
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <CheckCircle className="w-4 h-4" />
-            <span className="font-semibold text-base">
+            <span className="font-semibold text-sm">
+              <svg
+                className={`inline mr-1 w-4 h-4 ${openMessage ? "rotate-180" : "rotate-90"} transition-transform`}
+                viewBox="0 0 100 100"
+              >
+                <polygon points="10,80 90,80 50,10" fill="#000" />
+              </svg>
               <span className="font-mono text-success-content/90">
                 {message.toolName}
               </span>{" "}
               - Concluído
             </span>
           </div>
-
-          <div className="bg-black/10 backdrop-blur-sm p-3 border border-white/10 rounded-lg">
-            <div className="flex items-center gap-2 mb-2">
-              <Zap className="opacity-60 w-3 h-3" />
-              <span className="opacity-80 font-medium text-xs">Resultado:</span>
+          {openMessage ? (
+            <div className="bg-black/10 backdrop-blur-sm p-3 border border-white/10 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <Zap className="opacity-60 w-3 h-3" />
+                <span className="opacity-80 font-medium text-xs">
+                  Resultado:
+                </span>
+              </div>
+              <pre className="max-h-40 overflow-auto font-mono text-success-content/80 text-xs leading-relaxed">
+                {JSON.stringify(message.toolResult, null, 2)}
+              </pre>
             </div>
-            <pre className="max-h-40 overflow-auto font-mono text-success-content/80 text-xs leading-relaxed">
-              {JSON.stringify(message.toolResult, null, 2)}
-            </pre>
-          </div>
+          ) : null}
         </div>
       );
     }
@@ -137,7 +147,7 @@ export default function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
 
   return (
     <div
-      className={`chat ${isReceived ? "chat-start" : "chat-end"} cursor-pointer`}
+      className={`chat ${isReceived ? "chat-start" : "chat-end"} ${isToogled ? "cursor-pointer" : ""}`}
       onClick={() => setOpenMessage(!openMessage)}
     >
       <div className="chat-image avatar placeholder">
