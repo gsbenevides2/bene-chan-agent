@@ -25,6 +25,7 @@ export const messages = p.pgTable("messages", {
   role: roleEnum("role").notNull(),
   type: typeEnum("type").notNull(),
   text: p.text("text"),
+  toolId: p.text("tool_id"),
   toolName: p.text("tool_name"),
   toolArgs: p.jsonb("tool_args"),
   toolResult: p.jsonb("tool_result"),

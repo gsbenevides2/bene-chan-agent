@@ -39,6 +39,12 @@ export const MessageSchema = z.object({
     description: "Content of the message, if type is 'text'",
     example: "Hello, how can I help you?",
   }),
+  toolId: z.string().optional().meta({
+    title: "Tool ID",
+    description:
+      "Unique identifier for the tool being called, if type is 'toolCall'",
+    example: "get_weather",
+  }),
   toolName: z.string().optional().meta({
     title: "Tool Name",
     description: "Name of the tool called, if type is 'toolCall'",
