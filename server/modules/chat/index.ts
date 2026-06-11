@@ -134,12 +134,7 @@ export const chat = new Elysia({
 
       const response = OpenRouterService.streamChat(
         body.message,
-        async (finalMessages) => {
-          await ChatService.saveMultipleMessages(
-            params.sessionId,
-            finalMessages,
-          );
-        },
+        params.sessionId,
       );
       let lastMessageId = "";
       for await (const message of response) {

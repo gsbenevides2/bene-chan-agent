@@ -1,5 +1,7 @@
+"use client";
 import { ChatMessage } from "@/server/modules/chat/model";
-import { Cog, CheckCircle } from "lucide-react";
+import { Cog, CheckCircle, Zap, Clock } from "lucide-react";
+import { useState } from "react";
 import { remark } from "remark";
 import html from "remark-html";
 
@@ -10,6 +12,7 @@ interface ChatMessageBubbleProps {
 export default function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
   const isReceived = message.role === "assistant";
   const senderName = isReceived ? "Bene-chan" : "Você";
+  const [openMessage, setOpenMessage] = useState(false);
 
   // Determinar estilo baseado no tipo da mensagem
   const getMessageStyle = () => {
@@ -19,9 +22,9 @@ export default function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
         return "bg-neutral text-neutral-content opacity-80 animate-pulse";
         */
       case "toolCall":
-        return "bg-info text-info-content";
+        return "bg-gradient-to-r from-info/90 to-info text-info-content shadow-lg border border-info/20";
       case "toolResult":
-        return "bg-success text-success-content";
+        return "bg-gradient-to-r from-success/90 to-success text-success-content shadow-lg border border-success/20";
       default:
         return "bg-transparent shadow-none text-base-content";
     }
@@ -35,9 +38,13 @@ export default function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
         return <Brain className="inline mr-2 w-4 h-4" />;
         */
       case "toolCall":
-        return <Cog className="inline mr-2 w-4 h-4 animate-spin" />;
+        return (
+          <Cog className="inline mr-3 w-5 h-5 text-info-content/80 animate-spin" />
+        );
       case "toolResult":
-        return <CheckCircle className="inline mr-2 w-4 h-4" />;
+        return (
+          <CheckCircle className="inline mr-3 w-5 h-5 text-success-content/80" />
+        );
       default:
         return null;
     }
@@ -47,28 +54,67 @@ export default function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
   const formatMessageContent = () => {
     if (message.type === "toolCall" && message.toolName) {
       return (
-        <div>
-          <div className="mb-1 font-semibold text-sm">
-            🔧 Executando: {message.toolName}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-sm">
+              <svg
+                className={`inline mr-1 w-4 h-4 ${openMessage ? "rotate-180" : "rotate-90"} transition-transform`}
+                viewBox="0 0 100 100"
+              >
+                <polygon points="10,80 90,80 50,10" fill="#000" />
+              </svg>
+              Executando:{" "}
+              <span className="font-mono text-info-content/90">
+                {message.toolName}
+              </span>
+            </span>
           </div>
-          {message.toolArgs && (
-            <div className="opacity-70 text-xs">
-              Parâmetros: {JSON.stringify(message.toolArgs, null, 2)}
+
+          {message.toolArgs && openMessage ? (
+            <div className="bg-black/10 backdrop-blur-sm p-3 border border-white/10 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <Zap className="opacity-60 w-3 h-3" />
+                <span className="opacity-80 font-medium text-xs">
+                  Parâmetros:
+                </span>
+              </div>
+              <pre className="max-h-32 overflow-auto font-mono text-info-content/80 text-xs leading-relaxed">
+                {JSON.stringify(JSON.parse(message.toolArgs), null, 2)}
+              </pre>
             </div>
-          )}
+          ) : null}
+          {openMessage ? (
+            <div className="flex items-center gap-2 opacity-70 text-xs">
+              <Clock className="w-3 h-3" />
+              <span>Aguardando resposta...</span>
+            </div>
+          ) : null}
         </div>
       );
     }
 
     if (message.type === "toolResult" && message.toolResult) {
       return (
-        <div>
-          <div className="mb-1 font-semibold text-sm">
-            ✅ {message.toolName} - Resultado:
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <CheckCircle className="w-4 h-4" />
+            <span className="font-semibold text-base">
+              <span className="font-mono text-success-content/90">
+                {message.toolName}
+              </span>{" "}
+              - Concluído
+            </span>
           </div>
-          <pre className="bg-base-200 p-2 rounded overflow-auto text-xs">
-            {JSON.stringify(message.toolResult, null, 2)}
-          </pre>
+
+          <div className="bg-black/10 backdrop-blur-sm p-3 border border-white/10 rounded-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <Zap className="opacity-60 w-3 h-3" />
+              <span className="opacity-80 font-medium text-xs">Resultado:</span>
+            </div>
+            <pre className="max-h-40 overflow-auto font-mono text-success-content/80 text-xs leading-relaxed">
+              {JSON.stringify(message.toolResult, null, 2)}
+            </pre>
+          </div>
         </div>
       );
     }
@@ -90,7 +136,10 @@ export default function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
   });
 
   return (
-    <div className={`chat ${isReceived ? "chat-start" : "chat-end"}`}>
+    <div
+      className={`chat ${isReceived ? "chat-start" : "chat-end"} cursor-pointer`}
+      onClick={() => setOpenMessage(!openMessage)}
+    >
       <div className="chat-image avatar placeholder">
         <div
           className={`flex justify-center items-center bg-secondary text-secondary-content rounded-full w-10`}
@@ -101,16 +150,13 @@ export default function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
         </div>
       </div>
 
-      <div className="chat-header">
-        {senderName}
-        {message.type && message.type !== "text" && (
-          <span className="ml-2 badge badge-xs">{message.type}</span>
-        )}
-      </div>
+      <div className="chat-header">{senderName}</div>
 
-      <div className={`py-2 text-sm  rounded-lg ${getMessageStyle()}`}>
-        {getMessageIcon()}
-        {formatMessageContent()}
+      <div className={`p-4 text-sm rounded-xl ${getMessageStyle()}`}>
+        <div className="flex items-start">
+          {getMessageIcon()}
+          <div className="flex-1">{formatMessageContent()}</div>
+        </div>
       </div>
 
       <div className="opacity-50 text-xs chat-footer">{formattedTimestamp}</div>

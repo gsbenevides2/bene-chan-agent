@@ -2,6 +2,7 @@ import { ChatMessage } from "@/server/modules/chat/model";
 import { OpenRouter } from "@openrouter/sdk";
 import { ChatMessages } from "@openrouter/sdk/models";
 import Crypto from "crypto";
+import { ChatService } from "../modules/chat/service";
 
 export class OpenRouterService {
   static getFakeTool() {
@@ -22,12 +23,29 @@ export class OpenRouterService {
           },
         },
       },
+      {
+        type: "function" as const,
+        function: {
+          name: "get_news_headlines",
+          description: "Get the latest news headlines",
+          parameters: {
+            type: "object",
+            properties: {
+              category: {
+                type: "string",
+                description:
+                  "The category of news to get headlines for, e.g. technology, sports, business",
+              },
+            },
+          },
+        },
+      },
     ];
   }
 
   static async *streamChat(
     message: string,
-    receiveAllFinalMessages: (messages: ChatMessage[]) => void,
+    chatId: string,
   ): AsyncGenerator<ChatMessage, void, unknown> {
     const apiKey = Bun.env.OPENROUTER_API_KEY;
     let currentChatId = Crypto.randomUUID();
@@ -123,7 +141,7 @@ export class OpenRouterService {
         yield toolResultMessage;
       }
     }
-    receiveAllFinalMessages(finalMessages);
+    await ChatService.saveMultipleMessages(chatId, finalMessages);
   }
   /*
   static transformHistory(history: ChatMessage[]): ChatMessages[] {
