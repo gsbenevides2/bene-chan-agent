@@ -108,9 +108,7 @@ export default function AlertModal() {
       <div className="max-w-md modal-box">
         {/* Header com ícone e título */}
         <div className="flex items-center space-x-3 mb-4">
-          <div className={`${iconClasses} flex-shrink-0`}>
-            {getAlertIcon(type)}
-          </div>
+          <div className={`${iconClasses} shrink-0`}>{getAlertIcon(type)}</div>
 
           {title ? (
             <h3 className="font-bold text-base-content text-lg">{title}</h3>
