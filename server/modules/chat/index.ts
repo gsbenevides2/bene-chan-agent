@@ -1,5 +1,5 @@
 import Elysia, { sse } from "elysia";
-import { ChatModel, SendMessagePostReturn } from "./model";
+import { ChatMessage, ChatModel, SendMessagePostReturn } from "./model";
 import Crypto from "crypto";
 import { OpenRouterService } from "@/server/services/openrouter";
 import { ChatService } from "./service";
@@ -114,33 +114,28 @@ export const chat = new Elysia({
       }
       const receivedMessageId = Crypto.randomUUID();
       const receivedMessageTimestamp = new Date();
-      await ChatService.saveMessage(params.sessionId, {
+      const messageData: ChatMessage = {
         id: receivedMessageId,
         role: "user",
-        type: "text",
-        text: body.message,
+        content: body.message,
         timestamp: receivedMessageTimestamp,
-      });
+      };
+      await ChatService.saveMessage(params.sessionId, messageData);
       yield sse({
         event: "message",
         data: {
           id: receivedMessageId,
           role: "user",
-          type: "text",
-          text: body.message,
+          content: body.message,
           timestamp: receivedMessageTimestamp,
         },
       });
 
       const response = OpenRouterService.streamChat(
-        body.message,
+        await ChatService.getMessages(params.sessionId),
         params.sessionId,
       );
-      let lastMessageId = "";
       for await (const message of response) {
-        if (!lastMessageId) lastMessageId = message.id;
-        if (lastMessageId !== message.id) {
-        }
         yield sse({
           event: "message",
           data: message,

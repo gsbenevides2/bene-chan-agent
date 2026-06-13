@@ -18,45 +18,39 @@ export const ChatSessionSchema = z.object({
   }),
 });
 
-export const MessageSchema = z.object({
+export const ToolCallSchema = z.object({
   id: z.uuid().meta({
-    title: "Message ID",
+    title: "ToolCall ID",
     description: "Unique identifier for the message",
     example: "123e4567-e89b-12d3-a456-426614174000",
   }),
-  role: z.enum(["user", "assistant"]).meta({
-    title: "Role",
-    description: "Role of the message sender",
-    example: "user",
-  }),
-  type: z.enum(["text", "toolCall", "toolResult"]).meta({
-    title: "Type",
-    description: "Type of the message",
-    example: "text",
-  }),
-  text: z.string().optional().meta({
-    title: "Text",
-    description: "Content of the message, if type is 'text'",
-    example: "Hello, how can I help you?",
-  }),
-  toolId: z.string().optional().meta({
-    title: "Tool ID",
+  toolId: z.string().meta({
+    title: "Tool ID Of OpenRouter",
     description:
-      "Unique identifier for the tool being called, if type is 'toolCall'",
+      "The identifier for the tool being called received from OpenRouter, if type is 'toolCall'",
     example: "get_weather",
   }),
-  toolName: z.string().optional().meta({
+  toolName: z.string().meta({
     title: "Tool Name",
     description: "Name of the tool called, if type is 'toolCall'",
     example: "get_weather",
   }),
-  toolArgs: z.any().optional().meta({
+  toolArgs: z.string().optional().meta({
     title: "Tool Arguments",
     description: "Arguments passed to the tool, if type is 'toolCall'",
+    example: '{"location": "New York"}',
   }),
-  toolResult: z.unknown().optional().meta({
-    title: "Tool Result",
-    description: "Result returned by the tool, if type is 'toolResult'",
+  timestamp: z.date().meta({
+    title: "Timestamp",
+    description: "The date and time when the tool call was made",
+    example: "2024-01-01T12:00:00Z",
+  }),
+});
+export const CommomMessageSchema = z.object({
+  id: z.uuid().meta({
+    title: "Message ID",
+    description: "Unique identifier for the message",
+    example: "123e4567-e89b-12d3-a456-426614174000",
   }),
   timestamp: z.date().meta({
     title: "Timestamp",
@@ -64,6 +58,67 @@ export const MessageSchema = z.object({
     example: "2024-01-01T12:00:00Z",
   }),
 });
+export const AssistantMessageSchema = CommomMessageSchema.extend({
+  role: z.literal("assistant").meta({
+    title: "Role",
+    description:
+      "Role of the message sender, which is 'assistant' for this schema",
+    example: "assistant",
+  }),
+  content: z.string().optional().meta({
+    title: "Content",
+    description: "Content of the assistant message",
+    example: "The weather today is sunny with a high of 25°C.",
+  }),
+  toolCalls: z.array(ToolCallSchema).optional().meta({
+    title: "List Of Tools Calls",
+    description: "List of tools called in this message, if type is 'toolCall'",
+  }),
+});
+export const UserMessageSchema = CommomMessageSchema.extend({
+  role: z.literal("user").meta({
+    title: "Role",
+    description: "Role of the message sender, which is 'user' for this schema",
+    example: "user",
+  }),
+  content: z.string().optional().meta({
+    title: "Content",
+    description: "Content of the user message",
+    example: "What's the weather like today?",
+  }),
+});
+export const ToolResultMessageSchema = CommomMessageSchema.extend({
+  role: z.literal("tool").meta({
+    title: "Role",
+    description:
+      "Role of the message sender, which is 'tool' for this schema representing the result of a tool call",
+    example: "tool",
+  }),
+  toolName: z.string().optional().meta({
+    title: "Tool Name",
+    description: "Name of the tool that generated this result",
+    example: "get_weather",
+  }),
+  toolCallId: z.string().optional().meta({
+    title: "ToolCall ID",
+    description:
+      "The identifier for the tool call that generated this result, if type is 'toolResult'",
+    example: "123e4567-e89b-12d3-a456-426614174000",
+  }),
+  content: z.string().optional().meta({
+    title: "Content",
+    description: "Content of the tool result message",
+    example: "The weather today is sunny with a high of 25°C.",
+  }),
+});
+
+export const MessageSchema = z
+  .union([AssistantMessageSchema, UserMessageSchema, ToolResultMessageSchema])
+  .meta({
+    title: "Chat Message",
+    description:
+      "A message in the chat session, which can be from the user, assistant, or a tool result",
+  });
 
 // GET /chat
 export const ListChatSessionsResponseSchema = z.array(ChatSessionSchema).meta({
@@ -227,6 +282,8 @@ export const ChatModel = {
   UpdateChatSessionResponseSchema,
 };
 
+export type ToolCall = z.infer<typeof ToolCallSchema>;
+export type ToolResultMessage = z.infer<typeof ToolResultMessageSchema>;
 export type ChatMessage = z.infer<typeof MessageSchema>;
 export type ChatSession = z.infer<typeof ChatSessionSchema>;
 export type SendMessagePostReturn = z.infer<
