@@ -60,7 +60,6 @@ export default function QuickBar() {
   const handleModalOpen = useCallback(() => {
     setSearchTerm("");
     setSelectedIndex(0);
-    console.log(searchInputRef.current);
     if (searchInputRef.current) {
       setTimeout(() => {
         searchInputRef.current?.focus();

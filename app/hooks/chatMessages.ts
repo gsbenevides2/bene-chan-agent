@@ -24,7 +24,6 @@ export function useMessages(sessionId: string) {
               error(msg.data.message);
               continue;
             }
-            console.log("Received message:", msg);
             setMessages((prev) => {
               const messageIndex = prev.findIndex((m) => m.id === msg.data.id);
               if (messageIndex !== -1) {

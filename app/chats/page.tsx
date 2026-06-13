@@ -20,8 +20,6 @@ export default function ChatsPage() {
   const { warning, success, error } = useAlert();
 
   const handleSelectChat = (sessionId: string) => {
-    console.log("Navegando para chat:", sessionId);
-    // Navegar para o chat específico
     router.push(`/chat/${sessionId}`);
   };
 
