@@ -139,6 +139,8 @@ export class ChatService {
         role: "assistant",
         id: receivedChatMessage.id,
         content: receivedChatMessage.content ?? null,
+        toolCallId: null,
+        toolName: null,
         chatSessionId: sessionId,
         timestamp: receivedChatMessage.timestamp,
       };
@@ -151,6 +153,8 @@ export class ChatService {
         role: "user",
         id: receivedChatMessage.id,
         content: receivedChatMessage.content ?? null,
+        toolCallId: null,
+        toolName: null,
         chatSessionId: sessionId,
         timestamp: receivedChatMessage.timestamp,
       };
@@ -163,7 +167,9 @@ export class ChatService {
         role: "tool",
         id: receivedChatMessage.id,
         content: receivedChatMessage.content ?? null,
+        toolCallId: receivedChatMessage.toolCallId ?? null,
         chatSessionId: sessionId,
+        toolName: receivedChatMessage.toolName ?? null,
         timestamp: receivedChatMessage.timestamp,
       };
       return {
@@ -216,6 +222,8 @@ export class ChatService {
         role: "tool",
         content: messageRow.content ?? undefined,
         timestamp: messageRow.timestamp,
+        toolCallId: messageRow.toolCallId ?? undefined,
+        toolName: messageRow.toolName ?? undefined,
       };
     }
   }

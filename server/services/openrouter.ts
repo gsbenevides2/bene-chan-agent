@@ -1,7 +1,11 @@
 import { ChatMessage, ToolResultMessage } from "@/server/modules/chat/model";
 import { OpenRouter } from "@openrouter/sdk";
 import { ChatService } from "../modules/chat/service";
-import { ChatFinishReasonEnum, ChatMessages } from "@openrouter/sdk/models";
+import {
+  ChatFinishReasonEnum,
+  ChatMessages,
+  ChatToolCall,
+} from "@openrouter/sdk/models";
 import { receivedMessagesProcessor } from "../utils/openRouterMessageProcessor";
 
 export class OpenRouterService {
@@ -51,10 +55,11 @@ export class OpenRouterService {
     newMessages: ChatMessage[],
     chatId: string,
   ): AsyncGenerator<ChatMessage, void, unknown> {
+    const parsedHistory = this.transformHistory(newMessages);
     const stream = await this.openRouter.chat.send({
       chatRequest: {
         model: "openai/gpt-4o",
-        messages: this.transformHistory(newMessages),
+        messages: parsedHistory,
         stream: true,
         tools: this.getFakeTool(),
       },
@@ -154,19 +159,20 @@ export class OpenRouterService {
           content: msg.content || "",
         };
       } else if (msg.role === "assistant") {
+        const toolCalls: ChatToolCall[] | undefined = msg.toolCalls
+          ? msg.toolCalls.map((toolCall) => ({
+              type: "function" as const,
+              id: toolCall.toolId,
+              function: {
+                name: toolCall.toolName,
+                arguments: toolCall.toolArgs || "",
+              },
+            }))
+          : undefined;
         return {
           role: "assistant" as const,
           content: msg.content || "",
-          toolCalls: msg.toolCalls
-            ? msg.toolCalls.map((toolCall) => ({
-                type: "function" as const,
-                id: toolCall.toolId,
-                function: {
-                  name: toolCall.toolName,
-                  arguments: toolCall.toolArgs || "",
-                },
-              }))
-            : undefined,
+          toolCalls: toolCalls?.length ? toolCalls : undefined,
         };
       } else if (msg.role === "tool") {
         return {

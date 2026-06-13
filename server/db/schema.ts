@@ -41,6 +41,8 @@ export const messages = p.pgTable("messages", {
       onDelete: "cascade",
     }),
   role: roleEnum("role").notNull(),
+  toolCallId: p.text("tool_call_id"),
+  toolName: p.text("tool_name"),
   content: p.text("content"),
   timestamp: p
     .timestamp("timestamp", {
