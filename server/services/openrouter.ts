@@ -61,6 +61,7 @@ export class OpenRouterService {
         model: "openai/gpt-4o",
         messages: parsedHistory,
         stream: true,
+        sessionId: chatId,
         tools: this.getFakeTool(),
       },
     });

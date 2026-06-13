@@ -45,7 +45,7 @@ export class ChatService {
   static async saveMessage(sessionId: string, message: ChatMessage) {
     const dbRows = this.chatMessageToDbRows(sessionId, message);
     if (dbRows?.message) {
-      console.log(dbRows.message);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { id, ...restWithNoId } = dbRows.message;
       await db.insert(messages).values(dbRows.message).onConflictDoUpdate({
         target: messages.id,
