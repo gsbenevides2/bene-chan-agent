@@ -16,7 +16,8 @@ export default function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
   const getSenderName = () => {
     if (message.role === "user") return "Você";
     if (message.role === "assistant") return "Bene-chan";
-    return message.toolName ?? "Tool";
+    if (message.role === "tool") return "Bene-chan";
+    return "Bene-chan";
   };
 
   const senderName = getSenderName();
@@ -89,7 +90,7 @@ export default function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
                 </span>
               </div>
               {toolCall.toolArgs && openMessage ? (
-                <div className="bg-black/10 backdrop-blur-sm p-3 border border-white/10 rounded-lg mt-2">
+                <div className="bg-black/10 backdrop-blur-sm mt-2 p-3 border border-white/10 rounded-lg">
                   <div className="flex items-center gap-2 mb-2">
                     <Zap className="opacity-60 w-3 h-3" />
                     <span className="opacity-80 font-medium text-xs">
@@ -150,7 +151,9 @@ export default function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
     if (!message.content) return null;
 
     return (
-      <div dangerouslySetInnerHTML={{ __html: markdownToHtml(message.content) }} />
+      <div
+        dangerouslySetInnerHTML={{ __html: markdownToHtml(message.content) }}
+      />
     );
   };
 
@@ -165,7 +168,7 @@ export default function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
       onClick={() => isToggleable && setOpenMessage(!openMessage)}
     >
       <div className="chat-image avatar placeholder">
-        <div className="flex justify-center items-center bg-secondary text-secondary-content rounded-full w-10">
+        <div className="flex justify-center items-center bg-secondary rounded-full w-10 text-secondary-content">
           <span className="font-bold text-sm">
             {senderName.charAt(0).toUpperCase()}
           </span>

@@ -17,6 +17,7 @@
   "scripts": {
     "dev": "bun run --bun next dev",
     "build": "bun run --bun next build",
+    "buildAndRun": "sh ./scripts/buildRun.sh",
     "start": "bun run --bun next start",
     "lint": "bun run --bun eslint",
     "db:push": "bun run --bun drizzle-kit push",
