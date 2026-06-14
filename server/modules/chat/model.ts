@@ -286,6 +286,10 @@ export const UpdateChatSessionResponseSchema = z.object({
   }),
 });
 
+export const SearchChatSessionsQuerySchema = z.object({
+  q: z.string().min(1),
+});
+
 export const ChatModel = {
   MessageSchema,
   ChatSessionSchema,
@@ -302,6 +306,7 @@ export const ChatModel = {
   UpdateChatSessionParamSchema,
   UpdateChatSessionBodySchema,
   UpdateChatSessionResponseSchema,
+  SearchChatSessionsQuerySchema,
 };
 
 export type ToolCall = z.infer<typeof ToolCallSchema>;

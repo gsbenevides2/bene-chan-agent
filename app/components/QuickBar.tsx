@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Search, Command, Folder, Settings, ArrowRight, X, Bot, Plus, Trash2 } from "lucide-react";
+import { Search, Command, Folder, Settings, ArrowRight, X, Bot, Plus, Trash2, MessageSquare } from "lucide-react";
 import { useEventManager } from "@/app/utils/eventManager";
 import { OPEN_NEW_CHAT_MODAL_EVENT } from "@/app/components/NewChatModal";
 import { useRouter, usePathname } from "next/navigation";
@@ -11,16 +11,34 @@ interface Command {
   id: string;
   name: string;
   description: string;
+  type: "command";
   category?: string;
   action: () => void;
   disabled?: boolean;
 }
+
+interface AgentResult {
+  id: string;
+  name: string;
+  type: "agent";
+}
+
+interface ChatResult {
+  id: string;
+  title: string;
+  type: "chat";
+}
+
+type QuickItem = Command | AgentResult | ChatResult;
 
 export default function QuickBar() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const [agentResults, setAgentResults] = useState<AgentResult[]>([]);
+  const [chatResults, setChatResults] = useState<ChatResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
   const eventManager = useEventManager();
   const router = useRouter();
   const pathname = usePathname();
@@ -29,14 +47,16 @@ export default function QuickBar() {
 
   const onClose = useCallback(() => {
     setIsOpen(false);
+    setAgentResults([]);
+    setChatResults([]);
   }, []);
 
-  // Lista de comandos disponíveis
   const commands: Command[] = [
     {
       id: "new-chat",
       name: "Novo Chat",
       description: "Iniciar uma nova conversa",
+      type: "command",
       category: "Chat",
       action: () => {
         eventManager.dispatchEvent(OPEN_NEW_CHAT_MODAL_EVENT);
@@ -47,6 +67,7 @@ export default function QuickBar() {
       id: "history",
       name: "Ver Histórico",
       description: "Ver todo o histórico de conversas",
+      type: "command",
       category: "Chat",
       action: () => {
         router.push("/chats");
@@ -57,6 +78,7 @@ export default function QuickBar() {
       id: "delete-chat",
       name: "Excluir Chat",
       description: "Excluir a conversa atual",
+      type: "command",
       category: "Sistema",
       disabled: !isOnChatPage,
       action: () => {
@@ -78,6 +100,7 @@ export default function QuickBar() {
       id: "agents",
       name: "Gerenciar Agentes",
       description: "Ver e gerenciar todos os agentes",
+      type: "command",
       category: "Agentes",
       action: () => {
         router.push("/agents");
@@ -88,6 +111,7 @@ export default function QuickBar() {
       id: "new-agent",
       name: "Novo Agente",
       description: "Criar um novo agente personalizado",
+      type: "command",
       category: "Agentes",
       action: () => {
         router.push("/agents/new");
@@ -96,13 +120,61 @@ export default function QuickBar() {
     },
   ];
 
-  // Filtrar comandos baseado no termo de busca
   const filteredCommands = commands.filter(
     (command) =>
       !command.disabled &&
       (command.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         command.description.toLowerCase().includes(searchTerm.toLowerCase())),
   );
+
+  const allItems: QuickItem[] = [
+    ...filteredCommands,
+    ...agentResults,
+    ...chatResults,
+  ];
+
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    if (!searchTerm.trim()) {
+      setAgentResults([]);
+      setChatResults([]);
+      setIsSearching(false);
+      return;
+    }
+
+    setIsSearching(true);
+    debounceRef.current = setTimeout(async () => {
+      const api = getApiClient();
+      try {
+        const [agentsRes, chatsRes] = await Promise.all([
+          api.agents.search.get({ query: { q: searchTerm } }),
+          api.chat.search.get({ query: { q: searchTerm } }),
+        ]);
+
+        const agentsData = agentsRes.data ?? [];
+        const chatsData = chatsRes.data ?? [];
+
+        setAgentResults(
+          agentsData.map((a) => ({ id: a.id, name: a.name, type: "agent" as const })),
+        );
+        setChatResults(
+          chatsData.map((c) => ({ id: c.id, title: c.title, type: "chat" as const })),
+        );
+      } catch {
+        setAgentResults([]);
+        setChatResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [searchTerm]);
 
   const handleModalOpen = useCallback(() => {
     setSearchTerm("");
@@ -123,7 +195,6 @@ export default function QuickBar() {
     [],
   );
 
-  // Navegação com teclado
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!isOpen) return;
@@ -132,19 +203,28 @@ export default function QuickBar() {
         case "ArrowDown":
           e.preventDefault();
           setSelectedIndex((prev) =>
-            prev < filteredCommands.length - 1 ? prev + 1 : 0,
+            prev < allItems.length - 1 ? prev + 1 : 0,
           );
           break;
         case "ArrowUp":
           e.preventDefault();
           setSelectedIndex((prev) =>
-            prev > 0 ? prev - 1 : filteredCommands.length - 1,
+            prev > 0 ? prev - 1 : allItems.length - 1,
           );
           break;
         case "Enter":
           e.preventDefault();
-          if (filteredCommands[selectedIndex]) {
-            filteredCommands[selectedIndex].action();
+          if (allItems[selectedIndex]) {
+            const item = allItems[selectedIndex];
+            if (item.type === "command") {
+              item.action();
+            } else if (item.type === "agent") {
+              router.push(`/agents/${item.id}/edit`);
+              onClose();
+            } else if (item.type === "chat") {
+              router.push(`/chat/${item.id}`);
+              onClose();
+            }
           }
           break;
         case "Escape":
@@ -156,9 +236,8 @@ export default function QuickBar() {
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, selectedIndex, filteredCommands, onClose]);
+  }, [isOpen, selectedIndex, allItems, onClose, router]);
 
-  // Abrir quando / ou Ctrl+/ for pressionado
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
       const tagName =
@@ -172,14 +251,12 @@ export default function QuickBar() {
       const isNotAllowedTag = notAllowedTags.includes(tagName);
       const isValidKey = validKeys.includes(e.key);
 
-      // Ctrl+/ abre de qualquer lugar, inclusive de inputs
       if ((e.metaKey || e.ctrlKey) && e.key === "/") {
         e.preventDefault();
         handleModalOpen();
         return;
       }
 
-      // / abre apenas fora de inputs
       if (isValidKey && !isNotAllowedTag && !isOpen) {
         e.preventDefault();
         handleModalOpen();
@@ -190,25 +267,46 @@ export default function QuickBar() {
     return () => document.removeEventListener("keydown", handleGlobalKeyDown);
   }, [isOpen, handleModalOpen]);
 
-  const getCategoryIcon = (category?: string) => {
-    switch (category) {
-      case "Chat":
-        return <Command className="w-4 h-4" />;
-      case "Sistema":
-        return <Settings className="w-4 h-4" />;
-      case "Agentes":
-        return <Bot className="w-4 h-4" />;
-      case "Ajuda":
-        return <Folder className="w-4 h-4" />;
-      default:
-        return <Command className="w-4 h-4" />;
+  const getItemIcon = (item: QuickItem) => {
+    if (item.type === "command") {
+      switch (item.category) {
+        case "Chat":
+          return <Command className="w-4 h-4" />;
+        case "Sistema":
+          return <Settings className="w-4 h-4" />;
+        case "Agentes":
+          return <Bot className="w-4 h-4" />;
+        case "Ajuda":
+          return <Folder className="w-4 h-4" />;
+        default:
+          return <Command className="w-4 h-4" />;
+      }
     }
+    if (item.type === "agent") return <Bot className="w-4 h-4" />;
+    return <MessageSquare className="w-4 h-4" />;
+  };
+
+  const getItemName = (item: QuickItem) => {
+    if (item.type === "command") return item.name;
+    if (item.type === "agent") return item.name;
+    return item.title;
+  };
+
+  const getItemDescription = (item: QuickItem) => {
+    if (item.type === "command") return item.description;
+    if (item.type === "agent") return "Agente";
+    return "Chat";
+  };
+
+  const getItemCategory = (item: QuickItem) => {
+    if (item.type === "command") return item.category;
+    if (item.type === "agent") return "Agentes";
+    return "Chat";
   };
 
   return (
     <dialog className={`modal ${isOpen ? "modal-open" : ""}`}>
       <div className="w-11/12 max-w-2xl modal-box">
-        {/* Header */}
         <div className="flex justify-between items-center mb-4">
           <div className="flex items-center space-x-2">
             <Command className="w-5 h-5" />
@@ -219,53 +317,67 @@ export default function QuickBar() {
           </button>
         </div>
 
-        {/* Search Input */}
         <div className="relative mb-4">
           <Search className="top-1/2 left-3 absolute w-4 h-4 text-base-content/70 -translate-y-1/2 transform" />
           <input
             ref={searchInputRef}
             type="text"
-            placeholder="Digite para buscar comandos..."
+            placeholder="Digite para buscar comandos, agentes ou chats..."
             className="hover:border-base-400 focus:border-base-400 focus:outline-none focus:ring-0 w-full input input-bordered"
             value={searchTerm}
             onChange={handleInputChange}
           />
         </div>
 
-        {/* Commands List */}
         <div className="max-h-96 overflow-y-auto">
-          {filteredCommands.length === 0 ? (
+          {allItems.length === 0 ? (
             <div className="py-8 text-base-content/70 text-center">
               <Command className="opacity-50 mx-auto mb-2 w-12 h-12" />
-              <p>Nenhum comando encontrado</p>
+              <p>{isSearching ? "Buscando..." : "Nenhum resultado encontrado"}</p>
             </div>
           ) : (
             <div className="space-y-1">
-              {filteredCommands.map((command, index) => (
-<button
-                    key={command.id}
-                    onClick={command.action}
-                    onMouseEnter={() => !command.disabled && setSelectedIndex(index)}
-                    disabled={command.disabled}
-                    className={`w-full text-left p-3 rounded-lg transition-colors duration-150 ${selectedIndex === index && !command.disabled ? "bg-base-300" : ""} ${command.disabled ? "opacity-40 cursor-not-allowed" : ""}`}
+              {allItems.map((item, index) => (
+                <button
+                  key={`${item.type}-${index}`}
+                  onClick={() => {
+                    if (item.type === "command") {
+                      item.action();
+                    } else if (item.type === "agent") {
+                      router.push(`/agents/${item.id}/edit`);
+                      onClose();
+                    } else if (item.type === "chat") {
+                      router.push(`/chat/${item.id}`);
+                      onClose();
+                    }
+                  }}
+                  onMouseEnter={() => setSelectedIndex(index)}
+                  className={`w-full text-left p-3 rounded-lg transition-colors duration-150 ${selectedIndex === index ? "bg-base-300" : ""}`}
                 >
                   <div className="flex justify-between items-center">
                     <div className="flex items-center space-x-3">
                       <div className={"text-base-content/70"}>
-                        {getCategoryIcon(command.category)}
+                        {getItemIcon(item)}
                       </div>
                       <div>
                         <div className={`font-medium text-base-content`}>
-                          {command.name}
+                          {getItemName(item)}
                         </div>
                         <div className="text-sm text-base-content/70">
-                          {command.description}
+                          {getItemDescription(item)}
                         </div>
                       </div>
                     </div>
-                    <ArrowRight
-                      className={`w-4 h-4 transition-opacity opacity-0 ${selectedIndex === index ? "opacity-100" : ""}`}
-                    />
+                    <div className="flex items-center space-x-2">
+                      {item.type !== "command" && (
+                        <span className="px-2 py-0.5 rounded-full bg-base-200 text-xs text-base-content/60">
+                          {getItemCategory(item)}
+                        </span>
+                      )}
+                      <ArrowRight
+                        className={`w-4 h-4 transition-opacity opacity-0 ${selectedIndex === index ? "opacity-100" : ""}`}
+                      />
+                    </div>
                   </div>
                 </button>
               ))}
@@ -273,8 +385,7 @@ export default function QuickBar() {
           )}
         </div>
 
-        {/* Footer */}
-        {filteredCommands.length > 0 && (
+        {allItems.length > 0 && (
           <div className="flex justify-between items-center mt-4 pt-4 border-base-200 border-t text-xs text-base-content/70">
             <div className="flex items-center space-x-4">
               <span className="flex items-center space-x-1">
@@ -294,7 +405,6 @@ export default function QuickBar() {
         )}
       </div>
 
-      {/* Modal Backdrop */}
       <form method="dialog" className="modal-backdrop">
         <button onClick={onClose}>close</button>
       </form>

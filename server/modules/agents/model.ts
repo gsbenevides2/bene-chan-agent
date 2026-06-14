@@ -69,12 +69,17 @@ export const UpdateAgentParamSchema = z.object({
 
 export const ListAgentsResponseSchema = z.array(AgentSchema);
 
+export const SearchAgentsQuerySchema = z.object({
+  q: z.string().min(1),
+});
+
 export const AgentModel = {
   AgentSchema,
   CreateAgentBodySchema,
   UpdateAgentBodySchema,
   UpdateAgentParamSchema,
   ListAgentsResponseSchema,
+  SearchAgentsQuerySchema,
 };
 
 export type Agent = z.infer<typeof AgentSchema>;

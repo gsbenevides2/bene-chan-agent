@@ -7,7 +7,7 @@ import {
   SelectToolCall,
   toolCalls,
 } from "@/server/db/schema";
-import { count, eq, inArray } from "drizzle-orm";
+import { count, eq, ilike, inArray } from "drizzle-orm";
 import { ChatMessage, ToolCall } from "./model";
 import { generateUpdateSet } from "@/server/db/utils";
 import { AgentService } from "../agents/service";
@@ -65,6 +65,14 @@ export class ChatService {
       .update(chatSessions)
       .set({ title: newTitle })
       .where(eq(chatSessions.id, sessionId));
+  }
+
+  static async searchChats(query: string) {
+    return await db
+      .select()
+      .from(chatSessions)
+      .where(ilike(chatSessions.title, `%${query}%`))
+      .limit(10);
   }
 
   static async saveMessage(sessionId: string, message: ChatMessage) {

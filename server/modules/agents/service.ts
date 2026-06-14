@@ -1,6 +1,6 @@
 import { db } from "@/server/db";
 import { agents } from "@/server/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, ilike } from "drizzle-orm";
 import { CreateAgentBody, UpdateAgentBody } from "./model";
 
 export class AgentService {
@@ -29,5 +29,13 @@ export class AgentService {
   static async getAgent(agentId: string) {
     const result = await db.select().from(agents).where(eq(agents.id, agentId));
     return result.at(0);
+  }
+
+  static async searchAgents(query: string) {
+    return await db
+      .select()
+      .from(agents)
+      .where(ilike(agents.name, `%${query}%`))
+      .limit(10);
   }
 }

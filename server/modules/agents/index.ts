@@ -34,6 +34,21 @@ export const agents = new Elysia({
       },
     },
   )
+  .get(
+    "/search",
+    async ({ query }) => {
+      return await AgentService.searchAgents(query.q);
+    },
+    {
+      query: AgentModel.SearchAgentsQuerySchema,
+      response: AgentModel.ListAgentsResponseSchema,
+      detail: {
+        summary: "Search agents",
+        description: "Search agents by name.",
+        tags: ["Agents"],
+      },
+    },
+  )
   .put(
     "/:agentId",
     async ({ params, body }) => {

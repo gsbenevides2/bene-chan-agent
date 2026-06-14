@@ -25,6 +25,21 @@ export const chat = new Elysia({
       },
     },
   )
+  .get(
+    "/search",
+    async ({ query }) => {
+      return await ChatService.searchChats(query.q);
+    },
+    {
+      query: ChatModel.SearchChatSessionsQuerySchema,
+      response: ChatModel.ListChatSessionsResponseSchema,
+      detail: {
+        summary: "Search chat sessions",
+        description: "Search chat sessions by title.",
+        tags: ["Chat"],
+      },
+    },
+  )
   .post(
     "/",
     async ({ body }) => {
