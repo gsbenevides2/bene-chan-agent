@@ -47,7 +47,6 @@ export class OpenRouterService {
         yield message;
       }
     }
-    console.log({ finalMessages });
     await ChatService.saveMultipleMessages(chatId, finalMessages);
 
     if (finishReason === "tool_calls") {
@@ -100,7 +99,8 @@ export class OpenRouterService {
           role: "user" as const,
           content: msg.content || "",
         };
-      } else if (msg.role === "assistant") {
+      }
+      if (msg.role === "assistant") {
         const toolCalls: ChatToolCall[] | undefined = msg.toolCalls
           ? msg.toolCalls.map((toolCall) => ({
               type: "function" as const,
@@ -116,11 +116,18 @@ export class OpenRouterService {
           content: msg.content || "",
           toolCalls: toolCalls?.length ? toolCalls : undefined,
         };
-      } else if (msg.role === "tool") {
+      }
+      if (msg.role === "tool") {
         return {
           role: "tool" as const,
           content: msg.content || "",
           toolCallId: msg.toolCallId || "",
+        };
+      }
+      if (msg.role === "system") {
+        return {
+          role: "system" as const,
+          content: msg.content ?? "",
         };
       }
       return null;

@@ -3,23 +3,33 @@ import {
   agents,
   chatSessions,
   messages,
-  SelectChatSession,
   SelectMessage,
   SelectToolCall,
   toolCalls,
 } from "@/server/db/schema";
-import { count, eq, inArray, sql } from "drizzle-orm";
+import { count, eq, inArray } from "drizzle-orm";
 import { ChatMessage, ToolCall } from "./model";
 import { generateUpdateSet } from "@/server/db/utils";
+import { AgentService } from "../agents/service";
 
 export class ChatService {
   static async createChat(title: string, agentId: string) {
+    const agent = await AgentService.getAgent(agentId);
+    if (!agent) throw new Error("Agent is unavailable");
     const result = await db
       .insert(chatSessions)
       .values({ title, agentId })
       .returning();
     const chatId = result.at(0)?.id;
     if (!chatId) throw new Error("Failed to create chat session");
+
+    await this.saveMessage(chatId, {
+      role: "system",
+      content: agent.systemPrompt,
+      id: crypto.randomUUID(),
+      timestamp: new Date(),
+    });
+
     return chatId;
   }
 
@@ -191,6 +201,20 @@ export class ChatService {
         message,
         toolCalls: [],
       };
+    } else if (receivedChatMessage.role === "system") {
+      const message: SelectMessage = {
+        role: "system",
+        id: receivedChatMessage.id,
+        content: receivedChatMessage.content ?? null,
+        toolCallId: null,
+        toolName: null,
+        chatSessionId: sessionId,
+        timestamp: receivedChatMessage.timestamp,
+      };
+      return {
+        message,
+        toolCalls: [],
+      };
     }
     return undefined;
   }
@@ -239,6 +263,13 @@ export class ChatService {
         timestamp: messageRow.timestamp,
         toolCallId: messageRow.toolCallId ?? undefined,
         toolName: messageRow.toolName ?? undefined,
+      };
+    } else if (messageRow.role === "system") {
+      return {
+        id: messageRow.id,
+        role: "system",
+        content: messageRow.content ?? undefined,
+        timestamp: messageRow.timestamp,
       };
     }
   }

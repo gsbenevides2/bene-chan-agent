@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Search, Command, Folder, Settings, ArrowRight, X, Bot, Plus } from "lucide-react";
+import { Search, Command, Folder, Settings, ArrowRight, X, Bot, Plus, Trash2 } from "lucide-react";
 import { useEventManager } from "@/app/utils/eventManager";
 import { OPEN_NEW_CHAT_MODAL_EVENT } from "@/app/components/NewChatModal";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
+import { getApiClient } from "@/app/utils/client";
 
 interface Command {
   id: string;
@@ -12,6 +13,7 @@ interface Command {
   description: string;
   category?: string;
   action: () => void;
+  disabled?: boolean;
 }
 
 export default function QuickBar() {
@@ -21,6 +23,9 @@ export default function QuickBar() {
   const [isOpen, setIsOpen] = useState(false);
   const eventManager = useEventManager();
   const router = useRouter();
+  const pathname = usePathname();
+  const isOnChatPage = pathname.startsWith("/chat/");
+  const currentSessionId = isOnChatPage ? pathname.split("/chat/")[1] : null;
 
   const onClose = useCallback(() => {
     setIsOpen(false);
@@ -49,6 +54,27 @@ export default function QuickBar() {
       },
     },
     {
+      id: "delete-chat",
+      name: "Excluir Chat",
+      description: "Excluir a conversa atual",
+      category: "Sistema",
+      disabled: !isOnChatPage,
+      action: () => {
+        if (!currentSessionId) return;
+        const api = getApiClient();
+        api
+          .chat({ sessionId: currentSessionId })
+          .delete()
+          .then(() => {
+            router.push("/chats");
+            onClose();
+          })
+          .catch(() => {
+            onClose();
+          });
+      },
+    },
+    {
       id: "agents",
       name: "Gerenciar Agentes",
       description: "Ver e gerenciar todos os agentes",
@@ -73,8 +99,9 @@ export default function QuickBar() {
   // Filtrar comandos baseado no termo de busca
   const filteredCommands = commands.filter(
     (command) =>
-      command.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      command.description.toLowerCase().includes(searchTerm.toLowerCase()),
+      !command.disabled &&
+      (command.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        command.description.toLowerCase().includes(searchTerm.toLowerCase())),
   );
 
   const handleModalOpen = useCallback(() => {
@@ -206,11 +233,12 @@ export default function QuickBar() {
           ) : (
             <div className="space-y-1">
               {filteredCommands.map((command, index) => (
-                <button
-                  key={command.id}
-                  onClick={command.action}
-                  onMouseEnter={() => setSelectedIndex(index)}
-                  className={`w-full text-left p-3 rounded-lg transition-colors duration-150 ${selectedIndex === index ? "bg-base-300" : ""}`}
+<button
+                    key={command.id}
+                    onClick={command.action}
+                    onMouseEnter={() => !command.disabled && setSelectedIndex(index)}
+                    disabled={command.disabled}
+                    className={`w-full text-left p-3 rounded-lg transition-colors duration-150 ${selectedIndex === index && !command.disabled ? "bg-base-300" : ""} ${command.disabled ? "opacity-40 cursor-not-allowed" : ""}`}
                 >
                   <div className="flex justify-between items-center">
                     <div className="flex items-center space-x-3">

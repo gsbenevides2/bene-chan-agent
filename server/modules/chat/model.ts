@@ -111,9 +111,26 @@ export const ToolResultMessageSchema = CommomMessageSchema.extend({
     example: "The weather today is sunny with a high of 25°C.",
   }),
 });
+export const SystemMessageSchema = CommomMessageSchema.extend({
+  role: z.literal("system").meta({
+    title: "Role",
+    description:
+      "Role of the message sender, which is 'system' for this schema representing the system message prompt",
+  }),
+  content: z.string().optional().meta({
+    title: "Content",
+    description: "Content of the tool result message",
+    example: "The weather today is sunny with a high of 25°C.",
+  }),
+});
 
 export const MessageSchema = z
-  .union([AssistantMessageSchema, UserMessageSchema, ToolResultMessageSchema])
+  .union([
+    AssistantMessageSchema,
+    UserMessageSchema,
+    ToolResultMessageSchema,
+    SystemMessageSchema,
+  ])
   .meta({
     title: "Chat Message",
     description:

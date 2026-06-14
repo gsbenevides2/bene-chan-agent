@@ -25,4 +25,9 @@ export class AgentService {
     if (!agent) throw new Error("Agent not found");
     return agent;
   }
+
+  static async getAgent(agentId: string) {
+    const result = await db.select().from(agents).where(eq(agents.id, agentId));
+    return result.at(0);
+  }
 }

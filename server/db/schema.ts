@@ -24,7 +24,12 @@ export const chatSessions = p.pgTable("chat_sessions", {
     }),
 });
 
-export const roleEnum = p.pgEnum("role", ["user", "assistant", "tool"]);
+export const roleEnum = p.pgEnum("role", [
+  "user",
+  "assistant",
+  "tool",
+  "system",
+]);
 
 export const toolCalls = p.pgTable("tool_calls", {
   id: p.uuid("id").primaryKey().defaultRandom(),

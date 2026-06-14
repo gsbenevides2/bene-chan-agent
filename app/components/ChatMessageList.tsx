@@ -15,9 +15,11 @@ export default function ChatMessageList({ messages }: ChatMessageListProps) {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  const visibleMessages = messages.filter((m) => m.role !== "system");
+
   return (
     <div className="flex-1 space-y-4 p-4 overflow-y-auto">
-      {messages.map((message) => (
+      {visibleMessages.map((message) => (
         <ChatMessageBubble key={message.id} message={message} />
       ))}
       <div ref={messagesEndRef} />

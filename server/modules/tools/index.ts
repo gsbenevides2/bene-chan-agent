@@ -1,6 +1,7 @@
 import Elysia from "elysia";
 import { ToolModel } from "./model";
 import { ToolService } from "@/server/services/tools";
+import z from "zod";
 
 export const tools = new Elysia({
   prefix: "/tools",
@@ -10,7 +11,7 @@ export const tools = new Elysia({
     return ToolService.systemTools.map((tool) => ({
       name: tool.name,
       description: tool.description,
-      parameters: tool.parameters,
+      parameters: z.toJSONSchema(tool.parameters),
     }));
   },
   {
