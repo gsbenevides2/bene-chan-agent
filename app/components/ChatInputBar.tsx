@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Send } from "lucide-react";
 
 interface ChatInputBarProps {
@@ -10,6 +10,10 @@ interface ChatInputBarProps {
 export default function ChatInputBar({ onSend }: ChatInputBarProps) {
   const [inputText, setInputText] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    textareaRef.current?.focus();
+  }, []);
 
   const handleSend = () => {
     if (!inputText.trim()) return;

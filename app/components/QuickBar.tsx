@@ -158,7 +158,7 @@ export default function QuickBar() {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, selectedIndex, filteredCommands, onClose]);
 
-  // Abrir quando / for pressionado
+  // Abrir quando / ou Ctrl+/ for pressionado
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
       const tagName =
@@ -171,6 +171,15 @@ export default function QuickBar() {
       const validKeys = ["/"];
       const isNotAllowedTag = notAllowedTags.includes(tagName);
       const isValidKey = validKeys.includes(e.key);
+
+      // Ctrl+/ abre de qualquer lugar, inclusive de inputs
+      if ((e.metaKey || e.ctrlKey) && e.key === "/") {
+        e.preventDefault();
+        handleModalOpen();
+        return;
+      }
+
+      // / abre apenas fora de inputs
       if (isValidKey && !isNotAllowedTag && !isOpen) {
         e.preventDefault();
         handleModalOpen();
