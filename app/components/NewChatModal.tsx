@@ -8,13 +8,20 @@ import { useRouter } from "next/navigation";
 
 export const OPEN_NEW_CHAT_MODAL_EVENT = "open-new-chat-modal";
 
+interface AgentOption {
+  id: string;
+  name: string;
+}
+
 export default function NewChatModal() {
   const [chatName, setChatName] = useState("");
+  const [selectedAgentId, setSelectedAgentId] = useState("");
+  const [agents, setAgents] = useState<AgentOption[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const [isOpen, setIsOpen] = useState(false);
   const eventManager = useEventManager();
   const router = useRouter();
-  // Focar no input quando o modal abrir
+
   useEffect(() => {
     if (isOpen && inputRef.current) {
       setTimeout(() => {
@@ -23,25 +30,40 @@ export default function NewChatModal() {
     }
   }, [isOpen]);
 
-  // Limpar input quando fechar o modal
+  useEffect(() => {
+    if (isOpen) {
+      const api = getApiClient();
+      api.agents.get().then((response) => {
+        if (!response.error && response.data) {
+          setAgents(response.data);
+          if (response.data.length > 0 && !selectedAgentId) {
+            setSelectedAgentId(response.data[0].id);
+          }
+        }
+      });
+    }
+  }, [isOpen, selectedAgentId]);
+
   const handleClose = useCallback(() => {
     setChatName("");
+    setSelectedAgentId("");
     setIsOpen(false);
   }, []);
 
-  // Criar chat
   const handleCreateChat = useCallback(async () => {
     const api = getApiClient();
-    if (chatName.trim()) {
-      const response = await api.chat.post({ title: chatName.trim() });
+    if (chatName.trim() && selectedAgentId) {
+      const response = await api.chat.post({
+        title: chatName.trim(),
+        agentId: selectedAgentId,
+      });
       if (response.data?.sessionId) {
         handleClose();
         router.push(`/chat/${response.data.sessionId}`);
       }
     }
-  }, [chatName, handleClose, router]);
+  }, [chatName, selectedAgentId, handleClose, router]);
 
-  // Navegação com teclado
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!isOpen) return;
@@ -65,6 +87,7 @@ export default function NewChatModal() {
   useEffect(() => {
     const listener = eventManager.listen(OPEN_NEW_CHAT_MODAL_EVENT, () => {
       setChatName("");
+      setSelectedAgentId("");
       setIsOpen(true);
     });
     return () => {
@@ -75,7 +98,6 @@ export default function NewChatModal() {
   return (
     <dialog className={`modal ${isOpen ? "modal-open" : ""}`}>
       <div className="w-11/12 max-w-md modal-box">
-        {/* Header */}
         <div className="flex justify-between items-center mb-2">
           <h3 className="font-semibold text-lg">Novo Chat</h3>
           <button
@@ -86,15 +108,14 @@ export default function NewChatModal() {
           </button>
         </div>
 
-        {/* Input Field */}
-        <div className="mb-6">
-          <fieldset className="fielset">
+        <div className="mb-4">
+          <fieldset className="fieldset">
             <legend className="pb-2 text-sm">Nome do Chat</legend>
             <input
               ref={inputRef}
               type="text"
               placeholder="Digite o nome do novo chat..."
-              className="hover:border-base-400 focus:border-base-400 focus:outline-none focus:ring-0 w-full input input-bordered"
+              className="input input-bordered w-full"
               value={chatName}
               onChange={(e) => setChatName(e.target.value)}
               maxLength={50}
@@ -102,7 +123,26 @@ export default function NewChatModal() {
           </fieldset>
         </div>
 
-        {/* Action Buttons */}
+        <div className="mb-6">
+          <fieldset className="fieldset">
+            <legend className="pb-2 text-sm">Agente</legend>
+            <select
+              className="select select-bordered w-full"
+              value={selectedAgentId}
+              onChange={(e) => setSelectedAgentId(e.target.value)}
+            >
+              {agents.length === 0 && (
+                <option value="">Nenhum agente disponível</option>
+              )}
+              {agents.map((agent) => (
+                <option key={agent.id} value={agent.id}>
+                  {agent.name}
+                </option>
+              ))}
+            </select>
+          </fieldset>
+        </div>
+
         <div className="flex justify-end space-x-3">
           <button onClick={handleClose} className="btn btn-ghost">
             Sair
@@ -110,14 +150,13 @@ export default function NewChatModal() {
           <button
             onClick={handleCreateChat}
             className="btn btn-primary"
-            disabled={!chatName.trim()}
+            disabled={!chatName.trim() || !selectedAgentId}
           >
             Criar
           </button>
         </div>
       </div>
 
-      {/* Modal Backdrop */}
       <form method="dialog" className="modal-backdrop">
         <button onClick={handleClose}>close</button>
       </form>

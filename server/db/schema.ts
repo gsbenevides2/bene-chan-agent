@@ -1,5 +1,11 @@
 import * as p from "drizzle-orm/pg-core";
 
+export const agents = p.pgTable("agents", {
+  id: p.uuid("id").primaryKey().defaultRandom(),
+  name: p.text().notNull(),
+  systemPrompt: p.text().notNull(),
+});
+
 export const chatSessions = p.pgTable("chat_sessions", {
   id: p.uuid("id").primaryKey().defaultRandom(),
   title: p.text("title").notNull(),
@@ -9,6 +15,12 @@ export const chatSessions = p.pgTable("chat_sessions", {
     })
     .notNull()
     .defaultNow(),
+  agentId: p
+    .uuid("agent_id")
+    .notNull()
+    .references(() => agents.id, {
+      onDelete: "restrict",
+    }),
 });
 
 export const roleEnum = p.pgEnum("role", ["user", "assistant", "tool"]);
@@ -49,11 +61,6 @@ export const messages = p.pgTable("messages", {
       withTimezone: true,
     })
     .notNull(),
-});
-
-export const agents = p.pgTable("agents", {
-  id: p.uuid("id").primaryKey().defaultRandom(),
-  name: p.text().notNull(),
 });
 
 export type SelectChatSession = typeof chatSessions.$inferSelect;

@@ -11,8 +11,11 @@ import { ChatMessage, ToolCall } from "./model";
 import { generateUpdateSet } from "@/server/db/utils";
 
 export class ChatService {
-  static async createChat(title: string) {
-    const result = await db.insert(chatSessions).values({ title }).returning();
+  static async createChat(title: string, agentId: string) {
+    const result = await db
+      .insert(chatSessions)
+      .values({ title, agentId })
+      .returning();
     const chatId = result.at(0)?.id;
     if (!chatId) throw new Error("Failed to create chat session");
     return chatId;

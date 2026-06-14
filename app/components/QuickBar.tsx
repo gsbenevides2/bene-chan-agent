@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Search, Command, Folder, Settings, ArrowRight, X } from "lucide-react";
+import { Search, Command, Folder, Settings, ArrowRight, X, Bot, Plus } from "lucide-react";
 import { useEventManager } from "@/app/utils/eventManager";
 import { OPEN_NEW_CHAT_MODAL_EVENT } from "@/app/components/NewChatModal";
 import { useRouter } from "next/navigation";
@@ -45,6 +45,26 @@ export default function QuickBar() {
       category: "Chat",
       action: () => {
         router.push("/chats");
+        onClose();
+      },
+    },
+    {
+      id: "agents",
+      name: "Gerenciar Agentes",
+      description: "Ver e gerenciar todos os agentes",
+      category: "Agentes",
+      action: () => {
+        router.push("/agents");
+        onClose();
+      },
+    },
+    {
+      id: "new-agent",
+      name: "Novo Agente",
+      description: "Criar um novo agente personalizado",
+      category: "Agentes",
+      action: () => {
+        router.push("/agents/new");
         onClose();
       },
     },
@@ -140,6 +160,8 @@ export default function QuickBar() {
         return <Command className="w-4 h-4" />;
       case "Sistema":
         return <Settings className="w-4 h-4" />;
+      case "Agentes":
+        return <Bot className="w-4 h-4" />;
       case "Ajuda":
         return <Folder className="w-4 h-4" />;
       default:

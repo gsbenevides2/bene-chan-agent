@@ -19,13 +19,15 @@
     "build": "bun run --bun next build",
     "start": "bun run --bun next start",
     "lint": "bun run --bun eslint",
-    "db:push": "bun run --bun drizzle-kit push"
+    "db:push": "bun run --bun drizzle-kit push",
+    "db:drop": "bun run --bun drizzle-kit drop"
   },
   "dependencies": {
     "@elysia/cors": "^1.4.2",
     "@elysia/eden": "^1.4.10",
     "@elysia/openapi": "^1.4.15",
     "@openrouter/sdk": "^0.12.79",
+    "@uiw/react-md-editor": "^4.1.1",
     "daisyui": "^5.5.23",
     "drizzle-orm": "^0.45.2",
     "elysia": "^1.4.28",

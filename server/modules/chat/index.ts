@@ -28,7 +28,7 @@ export const chat = new Elysia({
   .post(
     "/",
     async ({ body }) => {
-      const sessionId = await ChatService.createChat(body.title);
+      const sessionId = await ChatService.createChat(body.title, body.agentId);
       return {
         sessionId,
       };

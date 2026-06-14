@@ -133,6 +133,11 @@ export const CreateChatSessionPostBodySchema = z.object({
     description: "The title of the chat session to be created",
     example: "My Chat Session",
   }),
+  agentId: z.string().uuid().meta({
+    title: "Agent ID",
+    description: "The ID of the agent to associate with this chat session",
+    example: "123e4567-e89b-12d3-a456-426614174000",
+  }),
 });
 
 export const CreateChatSessionPostResponseSchema = z.object({
