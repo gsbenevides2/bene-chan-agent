@@ -7,49 +7,12 @@ import {
   ChatToolCall,
 } from "@openrouter/sdk/models";
 import { receivedMessagesProcessor } from "../utils/openRouterMessageProcessor";
+import { ToolService } from "./tools";
 
 export class OpenRouterService {
   static openRouter = new OpenRouter({
     apiKey: Bun.env.OPENROUTER_API_KEY,
   });
-
-  static getFakeTool() {
-    return [
-      {
-        type: "function" as const,
-        function: {
-          name: "get_current_weather",
-          description: "Get the current weather in a given location",
-          parameters: {
-            type: "object",
-            properties: {
-              location: {
-                type: "string",
-                description: "The city and state, e.g. San Francisco, CA",
-              },
-            },
-          },
-        },
-      },
-      {
-        type: "function" as const,
-        function: {
-          name: "get_news_headlines",
-          description: "Get the latest news headlines",
-          parameters: {
-            type: "object",
-            properties: {
-              category: {
-                type: "string",
-                description:
-                  "The category of news to get headlines for, e.g. technology, sports, business",
-              },
-            },
-          },
-        },
-      },
-    ];
-  }
 
   static async *streamChat(
     newMessages: ChatMessage[],
@@ -62,7 +25,7 @@ export class OpenRouterService {
         messages: parsedHistory,
         stream: true,
         sessionId: chatId,
-        tools: this.getFakeTool(),
+        tools: ToolService.getToolsDefinition(),
       },
     });
 
@@ -83,6 +46,7 @@ export class OpenRouterService {
         yield message;
       }
     }
+    console.log({ finalMessages });
     await ChatService.saveMultipleMessages(chatId, finalMessages);
 
     if (finishReason === "tool_calls") {
@@ -120,36 +84,12 @@ export class OpenRouterService {
 
   static async callTool(
     toolName: string,
-    toolArgs: unknown,
+    toolArgs: string | undefined,
   ): Promise<{ success: boolean; result?: unknown; error?: string }> {
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-
-    if (toolName === "get_current_weather") {
-      const toolArgsA = toolArgs as { location: string };
-      return {
-        success: true,
-        result: {
-          location: toolArgsA.location,
-          temperature: "22°C",
-          condition: "Ensolarado",
-        },
-      };
-    } else if (toolName === "get_news_headlines") {
-      const toolArgsB = toolArgs as { category: string };
-      return {
-        success: true,
-        result: [
-          { title: "Notícia 1", category: toolArgsB.category },
-          { title: "Notícia 2", category: toolArgsB.category },
-          { title: "Notícia 3", category: toolArgsB.category },
-        ],
-      };
-    } else {
-      return {
-        success: false,
-        error: `Ferramenta desconhecida: ${toolName}`,
-      };
-    }
+    return ToolService.callTool(
+      toolName,
+      toolArgs ? (JSON.parse(toolArgs) as Record<string, unknown>) : undefined,
+    );
   }
 
   static transformHistory(history: ChatMessage[]): ChatMessages[] {

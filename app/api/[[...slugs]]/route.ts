@@ -4,6 +4,7 @@ import { healthcheck } from "@/server/modules/healthcheck";
 import { getProjectInfo } from "@/server/utils/getProjectInfo";
 import { chat } from "@/server/modules/chat";
 import cors from "@elysia/cors";
+import { tools } from "@/server/modules/tools";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +23,8 @@ const app = new Elysia({ prefix: "/api" })
     }),
   )
   .use(healthcheck)
-  .use(chat);
+  .use(chat)
+  .use(tools);
 
 export type App = typeof app;
 export const GET = app.handle;

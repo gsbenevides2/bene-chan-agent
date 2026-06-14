@@ -16,7 +16,6 @@
   "private": false,
   "scripts": {
     "dev": "bun run --bun next dev",
-    "dev:ws": "bun run --bun src/server.ts",
     "build": "bun run --bun next build",
     "start": "bun run --bun next start",
     "lint": "bun run --bun eslint",

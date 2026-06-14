@@ -51,6 +51,12 @@ export const messages = p.pgTable("messages", {
     .notNull(),
 });
 
+export const agents = p.pgTable("agents", {
+  id: p.uuid("id").primaryKey().defaultRandom(),
+  name: p.text().notNull(),
+});
+
 export type SelectChatSession = typeof chatSessions.$inferSelect;
 export type SelectToolCall = typeof toolCalls.$inferSelect;
 export type SelectMessage = typeof messages.$inferSelect;
+export type SelectAgents = typeof agents.$inferSelect;
