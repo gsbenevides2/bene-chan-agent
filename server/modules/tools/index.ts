@@ -1,12 +1,17 @@
 import Elysia from "elysia";
 import { ToolModel } from "./model";
+import { ToolService } from "@/server/services/tools";
 
 export const tools = new Elysia({
   prefix: "/tools",
 }).get(
   "/",
   () => {
-    return [];
+    return ToolService.systemTools.map((tool) => ({
+      name: tool.name,
+      description: tool.description,
+      parameters: tool.parameters,
+    }));
   },
   {
     response: ToolModel.GETToolSchemaResponse,

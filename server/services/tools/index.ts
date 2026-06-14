@@ -8,7 +8,11 @@ export class ToolService {
   ];
 
   static getToolsDefinition(filter: string[] = []) {
-    return this.systemTools.map((tool) => ({
+    const tools = filter.length === 0 || filter.includes("all")
+      ? this.systemTools
+      : this.systemTools.filter((tool) => filter.includes(tool.name));
+
+    return tools.map((tool) => ({
       type: "function" as const,
       function: {
         name: tool.name,

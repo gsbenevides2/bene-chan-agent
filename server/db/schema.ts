@@ -4,6 +4,7 @@ export const agents = p.pgTable("agents", {
   id: p.uuid("id").primaryKey().defaultRandom(),
   name: p.text().notNull(),
   systemPrompt: p.text().notNull(),
+  tools: p.text().array().notNull().default([]),
 });
 
 export const chatSessions = p.pgTable("chat_sessions", {

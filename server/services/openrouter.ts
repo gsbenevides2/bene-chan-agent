@@ -17,6 +17,7 @@ export class OpenRouterService {
   static async *streamChat(
     newMessages: ChatMessage[],
     chatId: string,
+    toolsFilter?: string[],
   ): AsyncGenerator<ChatMessage, void, unknown> {
     const parsedHistory = this.transformHistory(newMessages);
     const stream = await this.openRouter.chat.send({
@@ -25,7 +26,7 @@ export class OpenRouterService {
         messages: parsedHistory,
         stream: true,
         sessionId: chatId,
-        tools: ToolService.getToolsDefinition(),
+        tools: ToolService.getToolsDefinition(toolsFilter),
       },
     });
 
@@ -74,7 +75,7 @@ export class OpenRouterService {
       await ChatService.saveMultipleMessages(chatId, toolCallsResults);
       if (toolCallsResults.length > 0) {
         finalMessages = [...newMessages, ...finalMessages, ...toolCallsResults];
-        const message = this.streamChat(finalMessages, chatId);
+        const message = this.streamChat(finalMessages, chatId, toolsFilter);
         for await (const msg of message) {
           yield msg;
         }

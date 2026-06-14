@@ -1,13 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getApiClient } from "@/app/utils/client";
 import MDEditor from "@uiw/react-md-editor";
 import "@uiw/react-md-editor/markdown-editor.css";
 
+interface ToolOption {
+  name: string;
+  description: string;
+}
+
 interface AgentFormProps {
-  initialData?: { id: string; name: string; systemPrompt: string };
+  initialData?: {
+    id: string;
+    name: string;
+    systemPrompt: string;
+    tools?: string[];
+  };
 }
 
 export default function AgentForm({ initialData }: AgentFormProps) {
@@ -15,10 +25,39 @@ export default function AgentForm({ initialData }: AgentFormProps) {
   const [systemPrompt, setSystemPrompt] = useState(
     initialData?.systemPrompt ?? "",
   );
+  const [tools, setTools] = useState<string[]>(initialData?.tools ?? []);
+  const [availableTools, setAvailableTools] = useState<ToolOption[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const isEditing = !!initialData;
+
+  const isAllSelected = tools.includes("all");
+
+  useEffect(() => {
+    const api = getApiClient();
+    api.tools.get().then((response) => {
+      if (!response.error && response.data) {
+        setAvailableTools(response.data as ToolOption[]);
+      }
+    });
+  }, []);
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setTools(["all"]);
+    } else {
+      setTools([]);
+    }
+  };
+
+  const handleToolToggle = (toolName: string, checked: boolean) => {
+    if (checked) {
+      setTools((prev) => [...prev, toolName]);
+    } else {
+      setTools((prev) => prev.filter((t) => t !== toolName));
+    }
+  };
 
   const handleSave = async () => {
     if (!name.trim() || !systemPrompt.trim()) return;
@@ -30,6 +69,7 @@ export default function AgentForm({ initialData }: AgentFormProps) {
         const response = await api.agents({ agentId: initialData.id }).put({
           name: name.trim(),
           systemPrompt: systemPrompt.trim(),
+          tools,
         });
         if (response.error) {
           setError("Erro ao atualizar agente");
@@ -39,6 +79,7 @@ export default function AgentForm({ initialData }: AgentFormProps) {
         const response = await api.agents.post({
           name: name.trim(),
           systemPrompt: systemPrompt.trim(),
+          tools,
         });
         if (response.error) {
           setError("Erro ao criar agente");
@@ -120,6 +161,50 @@ export default function AgentForm({ initialData }: AgentFormProps) {
               preview="live"
               visibleDragbar={false}
             />
+          </div>
+        </fieldset>
+
+        <fieldset className="fieldset">
+          <legend className="text-sm pb-2 font-medium">Ferramentas</legend>
+          <p className="text-xs text-base-content/60 mb-3">
+            Selecione as ferramentas que este agente pode utilizar
+          </p>
+          <div className="space-y-2">
+            <label className="flex items-center gap-3 p-3 rounded-lg bg-base-200 cursor-pointer hover:bg-base-300 transition-colors">
+              <input
+                type="checkbox"
+                className="checkbox checkbox-primary"
+                checked={isAllSelected}
+                onChange={(e) => handleSelectAll(e.target.checked)}
+              />
+              <div>
+                <span className="font-medium">Selecionar Todas</span>
+              </div>
+            </label>
+            <div className="divider my-1" />
+            {availableTools.map((tool) => (
+              <label
+                key={tool.name}
+                className="flex items-center gap-3 p-3 rounded-lg bg-base-200 cursor-pointer hover:bg-base-300 transition-colors"
+              >
+                <input
+                  type="checkbox"
+                  className="checkbox checkbox-sm"
+                  checked={isAllSelected || tools.includes(tool.name)}
+                  disabled={isAllSelected}
+                  onChange={(e) => handleToolToggle(tool.name, e.target.checked)}
+                />
+                <div className="flex flex-col">
+                  <span className="font-medium text-sm">{tool.name}</span>
+                  <span className="text-xs text-base-content/60">{tool.description}</span>
+                </div>
+              </label>
+            ))}
+            {availableTools.length === 0 && (
+              <p className="text-sm text-base-content/40 text-center py-4">
+                Nenhuma ferramenta disponível
+              </p>
+            )}
           </div>
         </fieldset>
       </div>

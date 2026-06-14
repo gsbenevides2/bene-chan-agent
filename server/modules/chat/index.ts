@@ -131,9 +131,12 @@ export const chat = new Elysia({
         },
       });
 
+      const agentTools = await ChatService.getAgentTools(params.sessionId);
+
       const response = OpenRouterService.streamChat(
         await ChatService.getMessages(params.sessionId),
         params.sessionId,
+        agentTools.length > 0 ? agentTools : undefined,
       );
       for await (const message of response) {
         yield sse({

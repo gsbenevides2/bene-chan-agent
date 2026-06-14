@@ -1,7 +1,9 @@
 import { db } from "@/server/db";
 import {
+  agents,
   chatSessions,
   messages,
+  SelectChatSession,
   SelectMessage,
   SelectToolCall,
   toolCalls,
@@ -36,6 +38,16 @@ export class ChatService {
       .from(chatSessions)
       .where(eq(chatSessions.id, sessionId));
     return Number(result.at(0)?.count) > 0;
+  }
+
+  static async getAgentTools(sessionId: string): Promise<string[]> {
+    const result = await db
+      .select({ tools: agents.tools })
+      .from(chatSessions)
+      .innerJoin(agents, eq(chatSessions.agentId, agents.id))
+      .where(eq(chatSessions.id, sessionId));
+
+    return result.at(0)?.tools ?? [];
   }
 
   static async updateChat(sessionId: string, newTitle: string) {
