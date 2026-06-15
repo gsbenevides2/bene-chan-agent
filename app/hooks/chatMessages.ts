@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getApiClient } from "@/app/utils/client";
-import { ChatMessage } from "@/server/modules/chat/model";
+import { ChatMessage } from "@/server/modules/chat/messages/model";
 import { useAlert } from "./useAlert";
 
 export function useMessages(sessionId: string) {

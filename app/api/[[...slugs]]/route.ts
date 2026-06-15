@@ -14,6 +14,23 @@ const app = new Elysia({ prefix: "/api" })
     openapi({
       documentation: {
         info: getProjectInfo(),
+        tags: [
+          {
+            name: "Chat",
+          },
+          {
+            name: "Message",
+          },
+          {
+            name: "Tools",
+          },
+          {
+            name: "Agents",
+          },
+          {
+            name: "HealthCheck",
+          },
+        ],
       },
     }),
   )

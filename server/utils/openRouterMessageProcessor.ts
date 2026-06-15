@@ -1,5 +1,5 @@
 import { ChatStreamChoice, ChatStreamDelta } from "@openrouter/sdk/models";
-import { ChatMessage } from "../modules/chat/model";
+import { ChatMessage } from "../modules/chat/messages/model";
 
 export function receivedMessagesProcessor() {
   const deltas: ChatStreamDelta[] = [];

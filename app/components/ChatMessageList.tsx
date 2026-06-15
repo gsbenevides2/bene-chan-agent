@@ -3,7 +3,7 @@
 import { useRef, useEffect } from "react";
 import { MessageSquare } from "lucide-react";
 import ChatMessageBubble from "./ChatMessageBubble";
-import { ChatMessage } from "@/server/modules/chat/model";
+import { ChatMessage } from "@/server/modules/chat/messages/model";
 
 interface ChatMessageListProps {
   messages: ChatMessage[];

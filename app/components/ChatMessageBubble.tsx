@@ -1,5 +1,5 @@
 "use client";
-import { ChatMessage } from "@/server/modules/chat/model";
+import { ChatMessage } from "@/server/modules/chat/messages/model";
 import { Cog, CheckCircle, Zap, Clock } from "lucide-react";
 import { useState } from "react";
 import { remark } from "remark";

@@ -1,6 +1,6 @@
-import { ChatMessage, ToolResultMessage } from "@/server/modules/chat/model";
+import { ChatMessage, ToolResultMessage } from "@/server/modules/chat/messages/model";
 import { OpenRouter } from "@openrouter/sdk";
-import { ChatService } from "../modules/chat/service";
+import { MessageService } from "../modules/chat/messages/service";
 import {
   ChatFinishReasonEnum,
   ChatMessages,
@@ -47,7 +47,7 @@ export class OpenRouterService {
         yield message;
       }
     }
-    await ChatService.saveMultipleMessages(chatId, finalMessages);
+    await MessageService.saveMultipleMessages(chatId, finalMessages);
 
     if (finishReason === "tool_calls") {
       const allToolCalls = finalMessages.flatMap((msg) =>
@@ -71,7 +71,7 @@ export class OpenRouterService {
         toolCallsResults.push(toolResultMessage);
         yield toolResultMessage;
       }
-      await ChatService.saveMultipleMessages(chatId, toolCallsResults);
+      await MessageService.saveMultipleMessages(chatId, toolCallsResults);
       if (toolCallsResults.length > 0) {
         finalMessages = [...newMessages, ...finalMessages, ...toolCallsResults];
         const message = this.streamChat(finalMessages, chatId, toolsFilter);

@@ -1,16 +1,13 @@
-import Elysia, { sse } from "elysia";
-import { ChatMessage, ChatModel, SendMessagePostReturn } from "./model";
-import Crypto from "crypto";
-import { OpenRouterService } from "@/server/services/openrouter";
+import Elysia from "elysia";
+import { ChatModel } from "./model";
 import { ChatService } from "./service";
-
-export type MessageReturn = AsyncGenerator<
-  ReturnType<typeof sse<SendMessagePostReturn>>
->;
+import { messageRoutes } from "./messages";
 
 export const chat = new Elysia({
   prefix: "/chat",
+  tags: ["Chat"],
 })
+  .use(messageRoutes)
   .get(
     "/",
     async () => {
@@ -21,7 +18,6 @@ export const chat = new Elysia({
       detail: {
         summary: "List all chat sessions",
         description: "Retrieve a list of all existing chat sessions.",
-        tags: ["Chat"],
       },
     },
   )
@@ -36,7 +32,6 @@ export const chat = new Elysia({
       detail: {
         summary: "Search chat sessions",
         description: "Search chat sessions by title.",
-        tags: ["Chat"],
       },
     },
   )
@@ -55,7 +50,6 @@ export const chat = new Elysia({
         summary: "Create a new chat session",
         description:
           "Create a new chat session with an optional initial message.",
-        tags: ["Chat"],
       },
     },
   )
@@ -73,7 +67,6 @@ export const chat = new Elysia({
       detail: {
         summary: "Delete a chat session",
         description: "Delete an existing chat session by its ID.",
-        tags: ["Chat"],
       },
     },
   )
@@ -92,82 +85,6 @@ export const chat = new Elysia({
       detail: {
         summary: "Update a chat session",
         description: "Update the title of an existing chat session by its ID.",
-        tags: ["Chat"],
-      },
-    },
-  )
-  .get(
-    "/:sessionId/messages",
-    async ({ params }) => {
-      const messages = await ChatService.getMessages(params.sessionId);
-      return messages;
-    },
-    {
-      params: ChatModel.GetMessagesParamSchema,
-      response: ChatModel.GetMessagesResponseSchema,
-      detail: {
-        summary: "Get messages of a chat session",
-        description:
-          "Retrieve all messages associated with a specific chat session.",
-        tags: ["Chat"],
-      },
-    },
-  )
-  .post(
-    "/:sessionId/message",
-    async function* ({ body, params }): MessageReturn {
-      const chatExists = await ChatService.chatExists(params.sessionId);
-      if (!chatExists) {
-        yield sse({
-          event: "error",
-          data: {
-            message: "Chat não encontrado!",
-            code: "CHAT_SESSION_NOT_FOUND",
-          },
-        });
-        return;
-      }
-      const receivedMessageId = Crypto.randomUUID();
-      const receivedMessageTimestamp = new Date();
-      const messageData: ChatMessage = {
-        id: receivedMessageId,
-        role: "user",
-        content: body.message,
-        timestamp: receivedMessageTimestamp,
-      };
-      await ChatService.saveMessage(params.sessionId, messageData);
-      yield sse({
-        event: "message",
-        data: {
-          id: receivedMessageId,
-          role: "user",
-          content: body.message,
-          timestamp: receivedMessageTimestamp,
-        },
-      });
-
-      const agentTools = await ChatService.getAgentTools(params.sessionId);
-
-      const response = OpenRouterService.streamChat(
-        await ChatService.getMessages(params.sessionId),
-        params.sessionId,
-        agentTools.length > 0 ? agentTools : undefined,
-      );
-      for await (const message of response) {
-        yield sse({
-          event: "message",
-          data: message,
-        });
-      }
-    },
-    {
-      body: ChatModel.SendMessagePostBodySchema,
-      params: ChatModel.SendMessagePostParamSchema,
-      detail: {
-        summary: "Send a message to the chat model",
-        description:
-          "Send a message to the chat model and receive a stream of responses.",
-        tags: ["Chat"],
       },
     },
   );
