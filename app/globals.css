@@ -40,6 +40,12 @@ body{
   @apply bg-base-100 text-base-content;
 }
 
+input,
+textarea,
+select {
+  @apply focus:outline-none focus:ring-0;
+}
+
 .btn-adjacent {
   @apply hover:bg-white hover:border-white btn-outline hover:text-base-300 btn;
 }

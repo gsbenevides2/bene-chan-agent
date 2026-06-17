@@ -27,6 +27,7 @@
     "@elysia/cors": "^1.4.2",
     "@elysia/eden": "^1.4.10",
     "@elysia/openapi": "^1.4.15",
+    "@modelcontextprotocol/client": "2.0.0-alpha.2",
     "@openrouter/sdk": "^0.12.79",
     "@uiw/react-md-editor": "^4.1.1",
     "daisyui": "^5.5.23",

@@ -15,7 +15,7 @@ These rules are specific to this project. Whenever creating or editing UI compon
 <!-- BEGIN:nextjs-agent-rules -->
 
 ## ElysiaJS Schema Definition
-- For all API routes write schemas for body, response, params and query. Write using zod and write route details(sumary, description)
+- For all API routes write schemas for body, response, params and query. Write using zod and write route details(sumary, description). And use .meta({description, title and exemple})
 - Use folder structure of modules (index.ts. model.ts and service.ts) see chat folder as exemple.
 
 # This is NOT the Next.js you know

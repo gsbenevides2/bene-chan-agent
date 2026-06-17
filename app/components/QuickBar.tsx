@@ -1,7 +1,16 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import { Search, Command, Folder, Settings, ArrowRight, X, Bot, Plus, Trash2, MessageSquare } from "lucide-react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import {
+  Search,
+  Command,
+  Folder,
+  Settings,
+  ArrowRight,
+  X,
+  Bot,
+  MessageSquare,
+} from "lucide-react";
 import { useEventManager } from "@/app/utils/eventManager";
 import { OPEN_NEW_CHAT_MODAL_EVENT } from "@/app/components/NewChatModal";
 import { useRouter, usePathname } from "next/navigation";
@@ -97,6 +106,17 @@ export default function QuickBar() {
       },
     },
     {
+      id: "mcp-servers",
+      name: "Servidores MCP",
+      description: "Gerenciar servidores MCP",
+      type: "command",
+      category: "Agentes",
+      action: () => {
+        router.push("/mcp-servers");
+        onClose();
+      },
+    },
+    {
       id: "agents",
       name: "Gerenciar Agentes",
       description: "Ver e gerenciar todos os agentes",
@@ -127,11 +147,10 @@ export default function QuickBar() {
         command.description.toLowerCase().includes(searchTerm.toLowerCase())),
   );
 
-  const allItems: QuickItem[] = [
-    ...filteredCommands,
-    ...agentResults,
-    ...chatResults,
-  ];
+  const allItems = useMemo(
+    () => [...filteredCommands, ...agentResults, ...chatResults],
+    [agentResults, chatResults, filteredCommands],
+  );
 
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
 
@@ -139,6 +158,7 @@ export default function QuickBar() {
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
     if (!searchTerm.trim()) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setAgentResults([]);
       setChatResults([]);
       setIsSearching(false);
@@ -158,10 +178,18 @@ export default function QuickBar() {
         const chatsData = chatsRes.data ?? [];
 
         setAgentResults(
-          agentsData.map((a) => ({ id: a.id, name: a.name, type: "agent" as const })),
+          agentsData.map((a) => ({
+            id: a.id,
+            name: a.name,
+            type: "agent" as const,
+          })),
         );
         setChatResults(
-          chatsData.map((c) => ({ id: c.id, title: c.title, type: "chat" as const })),
+          chatsData.map((c) => ({
+            id: c.id,
+            title: c.title,
+            type: "chat" as const,
+          })),
         );
       } catch {
         setAgentResults([]);
@@ -333,7 +361,9 @@ export default function QuickBar() {
           {allItems.length === 0 ? (
             <div className="py-8 text-base-content/70 text-center">
               <Command className="opacity-50 mx-auto mb-2 w-12 h-12" />
-              <p>{isSearching ? "Buscando..." : "Nenhum resultado encontrado"}</p>
+              <p>
+                {isSearching ? "Buscando..." : "Nenhum resultado encontrado"}
+              </p>
             </div>
           ) : (
             <div className="space-y-1">
@@ -370,7 +400,7 @@ export default function QuickBar() {
                     </div>
                     <div className="flex items-center space-x-2">
                       {item.type !== "command" && (
-                        <span className="px-2 py-0.5 rounded-full bg-base-200 text-xs text-base-content/60">
+                        <span className="bg-base-200 px-2 py-0.5 rounded-full text-xs text-base-content/60">
                           {getItemCategory(item)}
                         </span>
                       )}

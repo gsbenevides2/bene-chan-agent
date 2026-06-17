@@ -62,12 +62,20 @@ export const messageRoutes = new Elysia({
         },
       });
 
-      const agentTools = await ChatService.getAgentTools(params.sessionId);
+      const { systemTools, mcpTools } = await ChatService.getAgentTools(
+        params.sessionId,
+      );
+
+      const mcpToolRefs =
+        mcpTools.length > 0
+          ? await ChatService.resolveMCPToolRefs(mcpTools)
+          : undefined;
 
       const response = OpenRouterService.streamChat(
         await MessageService.getMessages(params.sessionId),
         params.sessionId,
-        agentTools.length > 0 ? agentTools : undefined,
+        systemTools.length > 0 ? systemTools : undefined,
+        mcpToolRefs,
       );
       for await (const message of response) {
         yield sse({

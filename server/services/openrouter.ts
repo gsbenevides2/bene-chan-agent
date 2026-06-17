@@ -1,4 +1,7 @@
-import { ChatMessage, ToolResultMessage } from "@/server/modules/chat/messages/model";
+import {
+  ChatMessage,
+  ToolResultMessage,
+} from "@/server/modules/chat/messages/model";
 import { OpenRouter } from "@openrouter/sdk";
 import { MessageService } from "../modules/chat/messages/service";
 import {
@@ -8,6 +11,9 @@ import {
 } from "@openrouter/sdk/models";
 import { receivedMessagesProcessor } from "../utils/openRouterMessageProcessor";
 import { ToolService } from "./tools";
+import { ChatService } from "../modules/chat/service";
+
+type McpTools = Awaited<ReturnType<typeof ChatService.resolveMCPToolRefs>>;
 
 export class OpenRouterService {
   static openRouter = new OpenRouter({
@@ -18,6 +24,7 @@ export class OpenRouterService {
     newMessages: ChatMessage[],
     chatId: string,
     toolsFilter?: string[],
+    mcpTools?: McpTools,
   ): AsyncGenerator<ChatMessage, void, unknown> {
     const parsedHistory = this.transformHistory(newMessages);
     const stream = await this.openRouter.chat.send({
@@ -26,7 +33,7 @@ export class OpenRouterService {
         messages: parsedHistory,
         stream: true,
         sessionId: chatId,
-        tools: ToolService.getToolsDefinition(toolsFilter),
+        tools: ToolService.getToolsDefinition(toolsFilter, mcpTools),
       },
     });
 
@@ -59,6 +66,7 @@ export class OpenRouterService {
         const toolResult = await this.callTool(
           toolCall.toolName,
           toolCall.toolArgs,
+          mcpTools,
         );
         const toolResultMessage: ToolResultMessage = {
           id: crypto.randomUUID(),
@@ -74,7 +82,12 @@ export class OpenRouterService {
       await MessageService.saveMultipleMessages(chatId, toolCallsResults);
       if (toolCallsResults.length > 0) {
         finalMessages = [...newMessages, ...finalMessages, ...toolCallsResults];
-        const message = this.streamChat(finalMessages, chatId, toolsFilter);
+        const message = this.streamChat(
+          finalMessages,
+          chatId,
+          toolsFilter,
+          mcpTools,
+        );
         for await (const msg of message) {
           yield msg;
         }
@@ -85,10 +98,12 @@ export class OpenRouterService {
   static async callTool(
     toolName: string,
     toolArgs: string | undefined,
+    mcpTools?: McpTools,
   ): Promise<{ success: boolean; result?: unknown; error?: string }> {
     return ToolService.callTool(
       toolName,
       toolArgs ? (JSON.parse(toolArgs) as Record<string, unknown>) : undefined,
+      mcpTools,
     );
   }
 

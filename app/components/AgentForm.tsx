@@ -11,12 +11,32 @@ interface ToolOption {
   description: string;
 }
 
+interface MCPToolRef {
+  serverId: string;
+  toolName: string;
+}
+
+interface MCPToolInfo {
+  id: string;
+  serverId: string;
+  name: string;
+  description: string | null;
+}
+
+interface MCPServerWithTools {
+  id: string;
+  name: string;
+  url: string;
+  tools: MCPToolInfo[];
+}
+
 interface AgentFormProps {
   initialData?: {
     id: string;
     name: string;
     systemPrompt: string;
     tools?: string[];
+    mcpTools?: MCPToolRef[];
   };
 }
 
@@ -26,7 +46,11 @@ export default function AgentForm({ initialData }: AgentFormProps) {
     initialData?.systemPrompt ?? "",
   );
   const [tools, setTools] = useState<string[]>(initialData?.tools ?? []);
+  const [mcpTools, setMcpTools] = useState<MCPToolRef[]>(
+    initialData?.mcpTools ?? [],
+  );
   const [availableTools, setAvailableTools] = useState<ToolOption[]>([]);
+  const [mcpServers, setMcpServers] = useState<MCPServerWithTools[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -39,6 +63,11 @@ export default function AgentForm({ initialData }: AgentFormProps) {
     api.tools.get().then((response) => {
       if (!response.error && response.data) {
         setAvailableTools(response.data as ToolOption[]);
+      }
+    });
+    api["mcp-servers"].get().then((response) => {
+      if (!response.error && response.data) {
+        setMcpServers(response.data);
       }
     });
   }, []);
@@ -59,6 +88,28 @@ export default function AgentForm({ initialData }: AgentFormProps) {
     }
   };
 
+  const isMCPToolSelected = (serverId: string, toolName: string) => {
+    return mcpTools.some(
+      (t) => t.serverId === serverId && t.toolName === toolName,
+    );
+  };
+
+  const handleMCPToolToggle = (
+    serverId: string,
+    toolName: string,
+    checked: boolean,
+  ) => {
+    if (checked) {
+      setMcpTools((prev) => [...prev, { serverId, toolName }]);
+    } else {
+      setMcpTools((prev) =>
+        prev.filter(
+          (t) => !(t.serverId === serverId && t.toolName === toolName),
+        ),
+      );
+    }
+  };
+
   const handleSave = async () => {
     if (!name.trim() || !systemPrompt.trim()) return;
     setIsSaving(true);
@@ -70,6 +121,7 @@ export default function AgentForm({ initialData }: AgentFormProps) {
           name: name.trim(),
           systemPrompt: systemPrompt.trim(),
           tools,
+          mcpTools,
         });
         if (response.error) {
           setError("Erro ao atualizar agente");
@@ -80,6 +132,7 @@ export default function AgentForm({ initialData }: AgentFormProps) {
           name: name.trim(),
           systemPrompt: systemPrompt.trim(),
           tools,
+          mcpTools,
         });
         if (response.error) {
           setError("Erro ao criar agente");
@@ -95,20 +148,26 @@ export default function AgentForm({ initialData }: AgentFormProps) {
   };
 
   return (
-    <div data-color-mode="dark" className="flex flex-col flex-1 p-6 max-w-4xl mx-auto w-full">
-      <div className="flex items-center justify-between mb-6">
+    <div
+      data-color-mode="dark"
+      className="flex flex-col flex-1 mx-auto p-6 w-full max-w-4xl"
+    >
+      <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold">
+          <h1 className="font-bold text-2xl">
             {isEditing ? "Editar Agente" : "Novo Agente"}
           </h1>
-          <p className="text-base-content/70 text-sm mt-1">
+          <p className="mt-1 text-sm text-base-content/70">
             {isEditing
               ? "Atualize as informações do agente"
               : "Configure um novo agente para suas conversas"}
           </p>
         </div>
         <div className="flex gap-3">
-          <button onClick={() => router.push("/agents")} className="btn btn-ghost">
+          <button
+            onClick={() => router.push("/agents")}
+            className="btn btn-ghost"
+          >
             Cancelar
           </button>
           <button
@@ -128,18 +187,18 @@ export default function AgentForm({ initialData }: AgentFormProps) {
       </div>
 
       {error && (
-        <div className="alert alert-error mb-4">
+        <div className="mb-4 alert alert-error">
           <span>{error}</span>
         </div>
       )}
 
       <div className="space-y-6">
         <fieldset className="fieldset">
-          <legend className="text-sm pb-2 font-medium">Nome do Agente</legend>
+          <legend className="pb-2 font-medium text-sm">Nome do Agente</legend>
           <input
             type="text"
             placeholder="Ex: Assistente Personalizado"
-            className="input input-bordered w-full"
+            className="w-full input input-bordered"
             value={name}
             onChange={(e) => setName(e.target.value)}
             maxLength={100}
@@ -147,13 +206,11 @@ export default function AgentForm({ initialData }: AgentFormProps) {
         </fieldset>
 
         <fieldset className="fieldset">
-          <legend className="text-sm pb-2 font-medium">
-            System Prompt
-          </legend>
-          <p className="text-xs text-base-content/60 mb-3">
+          <legend className="pb-2 font-medium text-sm">System Prompt</legend>
+          <p className="mb-3 text-xs text-base-content/60">
             Escreva em Markdown as instruções e personalidade do agente
           </p>
-          <div className="rounded-box overflow-hidden border border-base-300">
+          <div className="border border-base-300 rounded-box overflow-hidden">
             <MDEditor
               value={systemPrompt}
               onChange={(val) => setSystemPrompt(val ?? "")}
@@ -165,12 +222,14 @@ export default function AgentForm({ initialData }: AgentFormProps) {
         </fieldset>
 
         <fieldset className="fieldset">
-          <legend className="text-sm pb-2 font-medium">Ferramentas</legend>
-          <p className="text-xs text-base-content/60 mb-3">
-            Selecione as ferramentas que este agente pode utilizar
+          <legend className="pb-2 font-medium text-sm">
+            Ferramentas do Sistema
+          </legend>
+          <p className="mb-3 text-xs text-base-content/60">
+            Selecione as ferramentas nativas que este agente pode utilizar
           </p>
           <div className="space-y-2">
-            <label className="flex items-center gap-3 p-3 rounded-lg bg-base-200 cursor-pointer hover:bg-base-300 transition-colors">
+            <label className="flex items-center gap-3 bg-base-200 hover:bg-base-300 p-3 rounded-lg transition-colors cursor-pointer">
               <input
                 type="checkbox"
                 className="checkbox checkbox-primary"
@@ -181,32 +240,92 @@ export default function AgentForm({ initialData }: AgentFormProps) {
                 <span className="font-medium">Selecionar Todas</span>
               </div>
             </label>
-            <div className="divider my-1" />
+            <div className="my-1 divider" />
             {availableTools.map((tool) => (
               <label
                 key={tool.name}
-                className="flex items-center gap-3 p-3 rounded-lg bg-base-200 cursor-pointer hover:bg-base-300 transition-colors"
+                className="flex items-center gap-3 bg-base-200 hover:bg-base-300 p-3 rounded-lg transition-colors cursor-pointer"
               >
                 <input
                   type="checkbox"
                   className="checkbox checkbox-sm"
                   checked={isAllSelected || tools.includes(tool.name)}
                   disabled={isAllSelected}
-                  onChange={(e) => handleToolToggle(tool.name, e.target.checked)}
+                  onChange={(e) =>
+                    handleToolToggle(tool.name, e.target.checked)
+                  }
                 />
                 <div className="flex flex-col">
                   <span className="font-medium text-sm">{tool.name}</span>
-                  <span className="text-xs text-base-content/60">{tool.description}</span>
+                  <span className="text-xs text-base-content/60">
+                    {tool.description}
+                  </span>
                 </div>
               </label>
             ))}
             {availableTools.length === 0 && (
-              <p className="text-sm text-base-content/40 text-center py-4">
+              <p className="py-4 text-sm text-base-content/40 text-center">
                 Nenhuma ferramenta disponível
               </p>
             )}
           </div>
         </fieldset>
+
+        {mcpServers.length > 0 && (
+          <fieldset className="fieldset">
+            <legend className="pb-2 font-medium text-sm">
+              Ferramentas MCP
+            </legend>
+            <p className="mb-3 text-xs text-base-content/60">
+              Selecione as ferramentas de servidores MCP que este agente pode
+              utilizar
+            </p>
+            <div className="space-y-4">
+              {mcpServers.map((server) => (
+                <div key={server.id} className="bg-base-200 p-3 rounded-lg">
+                  <p className="mb-2 font-medium text-sm">{server.name}</p>
+                  {server.tools.length === 0 ? (
+                    <p className="ml-2 text-xs text-base-content/40">
+                      Nenhuma ferramenta disponível
+                    </p>
+                  ) : (
+                    <div className="space-y-1 ml-2">
+                      {server.tools.map((tool) => (
+                        <label
+                          key={tool.id}
+                          className="flex items-center gap-3 hover:bg-base-300 p-2 rounded-lg transition-colors cursor-pointer"
+                        >
+                          <input
+                            type="checkbox"
+                            className="checkbox checkbox-sm"
+                            checked={isMCPToolSelected(server.id, tool.name)}
+                            onChange={(e) =>
+                              handleMCPToolToggle(
+                                server.id,
+                                tool.name,
+                                e.target.checked,
+                              )
+                            }
+                          />
+                          <div className="flex flex-col">
+                            <span className="font-medium text-sm">
+                              {tool.name}
+                            </span>
+                            {tool.description && (
+                              <span className="text-xs text-base-content/60">
+                                {tool.description}
+                              </span>
+                            )}
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </fieldset>
+        )}
       </div>
     </div>
   );

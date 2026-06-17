@@ -5,6 +5,7 @@ export const agents = p.pgTable("agents", {
   name: p.text().notNull(),
   systemPrompt: p.text().notNull(),
   tools: p.text().array().notNull().default([]),
+  mcpTools: p.jsonb("mcp_tools").notNull().default([]),
 });
 
 export const chatSessions = p.pgTable(
@@ -91,7 +92,43 @@ export const messages = p.pgTable(
   ],
 );
 
+export const mcpServers = p.pgTable("mcp_servers", {
+  id: p.uuid("id").primaryKey().defaultRandom(),
+  name: p.text().notNull(),
+  url: p.text().notNull(),
+  headers: p.jsonb("headers").notNull().default([]),
+  createdAt: p
+    .timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: p
+    .timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export const mcpServerTools = p.pgTable(
+  "mcp_server_tools",
+  {
+    id: p.uuid("id").primaryKey().defaultRandom(),
+    serverId: p
+      .uuid("server_id")
+      .notNull()
+      .references(() => mcpServers.id, { onDelete: "cascade" }),
+    name: p.text().notNull(),
+    description: p.text(),
+    inputSchema: p.jsonb("input_schema"),
+    createdAt: p
+      .timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [p.index("idx_mcp_server_tools_server_id").on(table.serverId)],
+);
+
 export type SelectChatSession = typeof chatSessions.$inferSelect;
 export type SelectToolCall = typeof toolCalls.$inferSelect;
 export type SelectMessage = typeof messages.$inferSelect;
 export type SelectAgents = typeof agents.$inferSelect;
+export type SelectMcpServer = typeof mcpServers.$inferSelect;
+export type SelectMcpServerTools = typeof mcpServerTools.$inferSelect;

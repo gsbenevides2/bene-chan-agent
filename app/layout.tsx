@@ -32,7 +32,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       data-theme="dark"
     >
-      <body className="flex flex-col h-full overflow-hidden">
+      <body className="flex flex-col h-full overflow-auto">
         {children}
         <CreateEventManager />
         <QuickBar />

@@ -6,6 +6,7 @@ import { chat } from "@/server/modules/chat";
 import cors from "@elysia/cors";
 import { tools } from "@/server/modules/tools";
 import { agents } from "@/server/modules/agents";
+import { mcpServers } from "@/server/modules/mcp-servers";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,9 @@ const app = new Elysia({ prefix: "/api" })
             name: "Agents",
           },
           {
+            name: "MCP Servers",
+          },
+          {
             name: "HealthCheck",
           },
         ],
@@ -43,7 +47,8 @@ const app = new Elysia({ prefix: "/api" })
   .use(healthcheck)
   .use(chat)
   .use(tools)
-  .use(agents);
+  .use(agents)
+  .use(mcpServers);
 
 export type App = typeof app;
 export const GET = app.handle;

@@ -2,8 +2,10 @@ import { db } from "@/server/db";
 import {
   agents,
   chatSessions,
+  mcpServers,
+  mcpServerTools,
 } from "@/server/db/schema";
-import { count, eq, ilike } from "drizzle-orm";
+import { count, eq, ilike, inArray } from "drizzle-orm";
 import { AgentService } from "../agents/service";
 import { MessageService } from "./messages/service";
 
@@ -45,14 +47,21 @@ export class ChatService {
     return Number(result.at(0)?.count) > 0;
   }
 
-  static async getAgentTools(sessionId: string): Promise<string[]> {
+  static async getAgentTools(sessionId: string) {
     const result = await db
-      .select({ tools: agents.tools })
+      .select({ tools: agents.tools, mcpTools: agents.mcpTools })
       .from(chatSessions)
       .innerJoin(agents, eq(chatSessions.agentId, agents.id))
       .where(eq(chatSessions.id, sessionId));
 
-    return result.at(0)?.tools ?? [];
+    const row = result.at(0);
+    return {
+      systemTools: (row?.tools ?? []) as string[],
+      mcpTools: (row?.mcpTools ?? []) as {
+        serverId: string;
+        toolName: string;
+      }[],
+    };
   }
 
   static async updateChat(sessionId: string, newTitle: string) {
@@ -68,5 +77,41 @@ export class ChatService {
       .from(chatSessions)
       .where(ilike(chatSessions.title, `%${query}%`))
       .limit(10);
+  }
+
+  static async resolveMCPToolRefs(
+    mcpTools: { serverId: string; toolName: string }[],
+  ) {
+    const serverIds = [...new Set(mcpTools.map((t) => t.serverId))];
+    const servers = await db
+      .select()
+      .from(mcpServers)
+      .where(inArray(mcpServers.id, serverIds));
+
+    const serverMap = new Map(servers.map((s) => [s.id, s]));
+
+    const allTools = await db
+      .select()
+      .from(mcpServerTools)
+      .where(inArray(mcpServerTools.serverId, serverIds));
+
+    const toolMap = new Map(
+      allTools.map((t) => [`${t.serverId}:${t.name}`, t]),
+    );
+
+    return mcpTools
+      .map((ref) => {
+        const server = serverMap.get(ref.serverId);
+        const tool = toolMap.get(`${ref.serverId}:${ref.toolName}`);
+        if (!server || !tool) return null;
+        return {
+          serverId: ref.serverId,
+          toolName: ref.toolName,
+          serverUrl: server.url,
+          headers: (server.headers ?? []) as { key: string; value: string }[],
+          inputSchema: tool.inputSchema as Record<string, unknown> | undefined,
+        };
+      })
+      .filter((ref): ref is NonNullable<typeof ref> => ref !== null);
   }
 }

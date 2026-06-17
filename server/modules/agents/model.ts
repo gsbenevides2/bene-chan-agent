@@ -18,9 +18,30 @@ export const AgentSchema = z.object({
   }),
   tools: z.array(z.string()).meta({
     title: "Tool Names",
-    description: "List of tool names this agent can use. Use ['all'] to enable all tools",
+    description:
+      "List of tool names this agent can use. Use ['all'] to enable all tools",
     example: ["get_current_weather"],
   }),
+  mcpTools: z
+    .array(
+      z.object({
+        serverId: z.string().meta({
+          title: "Server ID",
+          description: "UUID of the MCP server",
+          example: "123e4567-e89b-12d3-a456-426614174000",
+        }),
+        toolName: z.string().meta({
+          title: "Tool Name",
+          description: "Name of the tool from the MCP server",
+          example: "create-pr",
+        }),
+      }),
+    )
+    .meta({
+      title: "MCP Tools",
+      description: "List of MCP tool references this agent can use",
+      example: [{ serverId: "uuid", toolName: "create-pr" }],
+    }),
 });
 
 export const CreateAgentBodySchema = z.object({
@@ -34,11 +55,36 @@ export const CreateAgentBodySchema = z.object({
     description: "System prompt defining the agent's behavior and personality",
     example: "Você é um assistente útil e amigável.",
   }),
-  tools: z.array(z.string()).default([]).meta({
-    title: "Tool Names",
-    description: "List of tool names this agent can use. Defaults to empty (no tools)",
-    example: ["get_current_weather"],
-  }),
+  tools: z
+    .array(z.string())
+    .default([])
+    .meta({
+      title: "Tool Names",
+      description:
+        "List of tool names this agent can use. Defaults to empty (no tools)",
+      example: ["get_current_weather"],
+    }),
+  mcpTools: z
+    .array(
+      z.object({
+        serverId: z.string().meta({
+          title: "Server ID",
+          description: "UUID of the MCP server",
+          example: "123e4567-e89b-12d3-a456-426614174000",
+        }),
+        toolName: z.string().meta({
+          title: "Tool Name",
+          description: "Name of the tool from the MCP server",
+          example: "create-pr",
+        }),
+      }),
+    )
+    .default([])
+    .meta({
+      title: "MCP Tools",
+      description: "List of MCP tool references this agent can use",
+      example: [{ serverId: "uuid", toolName: "create-pr" }],
+    }),
 });
 
 export const UpdateAgentBodySchema = z.object({
@@ -52,11 +98,36 @@ export const UpdateAgentBodySchema = z.object({
     description: "System prompt defining the agent's behavior and personality",
     example: "Você é um assistente útil e amigável.",
   }),
-  tools: z.array(z.string()).optional().meta({
-    title: "Tool Names",
-    description: "List of tool names this agent can use. Send ['all'] to enable all tools",
-    example: ["get_current_weather"],
-  }),
+  tools: z
+    .array(z.string())
+    .optional()
+    .meta({
+      title: "Tool Names",
+      description:
+        "List of tool names this agent can use. Send ['all'] to enable all tools",
+      example: ["get_current_weather"],
+    }),
+  mcpTools: z
+    .array(
+      z.object({
+        serverId: z.string().meta({
+          title: "Server ID",
+          description: "UUID of the MCP server",
+          example: "123e4567-e89b-12d3-a456-426614174000",
+        }),
+        toolName: z.string().meta({
+          title: "Tool Name",
+          description: "Name of the tool from the MCP server",
+          example: "create-pr",
+        }),
+      }),
+    )
+    .optional()
+    .meta({
+      title: "MCP Tools",
+      description: "List of MCP tool references this agent can use",
+      example: [{ serverId: "uuid", toolName: "create-pr" }],
+    }),
 });
 
 export const UpdateAgentParamSchema = z.object({
