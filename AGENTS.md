@@ -13,6 +13,11 @@ These rules are specific to this project. Whenever creating or editing UI compon
 - **Separate presentational and container logic**: Extract presentational components (like message bubbles, headers) from container components that manage state and data flow.
 
 <!-- BEGIN:nextjs-agent-rules -->
+
+## ElysiaJS Schema Definition
+- For all API routes write schemas for body, response, params and query. Write using zod and write route details(sumary, description)
+- Use folder structure of modules (index.ts. model.ts and service.ts) see chat folder as exemple.
+
 # This is NOT the Next.js you know
 
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
