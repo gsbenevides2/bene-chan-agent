@@ -10,6 +10,7 @@ import {
   X,
   Bot,
   MessageSquare,
+  Beaker,
 } from "lucide-react";
 import { useEventManager } from "@/app/utils/eventManager";
 import { OPEN_NEW_CHAT_MODAL_EVENT } from "@/app/components/NewChatModal";
@@ -161,6 +162,17 @@ export default function QuickBar() {
       category: "Agentes",
       action: () => {
         router.push("/agents/new");
+        onClose();
+      },
+    },
+    {
+      id: "tools-test",
+      name: "Tool Tester",
+      description: "Testar ferramentas do sistema",
+      type: "command",
+      category: "Ferramentas",
+      action: () => {
+        router.push("/tools-test");
         onClose();
       },
     },
@@ -332,6 +344,8 @@ export default function QuickBar() {
           return <Bot className="w-4 h-4" />;
         case "Ajuda":
           return <Folder className="w-4 h-4" />;
+        case "Ferramentas":
+          return <Beaker className="w-4 h-4" />;
         default:
           return <Command className="w-4 h-4" />;
       }
