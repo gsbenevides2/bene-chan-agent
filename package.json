@@ -21,7 +21,8 @@
     "start": "bun run --bun next start",
     "lint": "bun run --bun eslint",
     "db:push": "bun run --bun drizzle-kit push",
-    "db:drop": "bun run --bun drizzle-kit drop"
+    "db:drop": "bun run --bun drizzle-kit drop",
+    "db:view": "bunx --bun drizzle-kit studio"
   },
   "dependencies": {
     "@elysia/cors": "^1.4.2",
@@ -40,6 +41,7 @@
     "react-dom": "19.2.4",
     "remark": "^15.0.1",
     "remark-html": "^16.0.1",
+    "web-push": "^3.6.7",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -47,6 +49,7 @@
     "@types/bun": "^1.3.14",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/web-push": "^3.6.4",
     "drizzle-kit": "^0.31.10",
     "eslint": "^9",
     "eslint-config-next": "16.2.7",

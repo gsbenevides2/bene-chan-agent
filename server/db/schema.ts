@@ -132,3 +132,32 @@ export type SelectMessage = typeof messages.$inferSelect;
 export type SelectAgents = typeof agents.$inferSelect;
 export type SelectMcpServer = typeof mcpServers.$inferSelect;
 export type SelectMcpServerTools = typeof mcpServerTools.$inferSelect;
+
+export const notifications = p.pgTable("notifications", {
+  id: p.uuid("id").primaryKey().defaultRandom(),
+  title: p.text().notNull(),
+  description: p.text().notNull(),
+  image: p.text(),
+  link: p.text(),
+  read: p.boolean().notNull().default(false),
+  createdAt: p
+    .timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export const pushSubscriptions = p.pgTable("push_subscriptions", {
+  id: p.uuid("id").primaryKey().defaultRandom(),
+  endpoint: p.text().notNull().unique(),
+  p256dhKey: p.text("p256dh_key").notNull(),
+  authKey: p.text("auth_key").notNull(),
+  userAgent: p.text("user_agent"),
+  enabled: p.boolean().notNull().default(true),
+  createdAt: p
+    .timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export type SelectNotification = typeof notifications.$inferSelect;
+export type SelectPushSubscription = typeof pushSubscriptions.$inferSelect;

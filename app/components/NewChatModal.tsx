@@ -33,7 +33,7 @@ export default function NewChatModal() {
   useEffect(() => {
     if (isOpen) {
       const api = getApiClient();
-      api.agents.get().then((response) => {
+      api.agents.get().then((response: { error?: unknown; data?: { id: string; name: string }[] }) => {
         if (!response.error && response.data) {
           setAgents(response.data);
           if (response.data.length > 0 && !selectedAgentId) {

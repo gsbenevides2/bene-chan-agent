@@ -4,6 +4,8 @@ import "./globals.css";
 import QuickBar from "@/app/components/QuickBar";
 import NewChatModal from "@/app/components/NewChatModal";
 import AlertModal from "@/app/components/AlertModal";
+import { ClientNotificationCenter } from "@/app/components/ClientNotificationCenter";
+import { RegisterServiceWorker } from "@/app/components/RegisterServiceWorker";
 import { CreateEventManager } from "@/app/utils/eventManager";
 
 const geistSans = Geist({
@@ -34,10 +36,12 @@ export default function RootLayout({
     >
       <body className="flex flex-col h-full overflow-auto">
         {children}
-        <CreateEventManager />
+<CreateEventManager />
+        <RegisterServiceWorker />
         <QuickBar />
         <NewChatModal />
         <AlertModal />
+        <ClientNotificationCenter />
       </body>
     </html>
   );

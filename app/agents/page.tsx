@@ -59,7 +59,7 @@ export default function AgentsPage() {
 
   useEffect(() => {
     const api = getApiClient();
-    api.agents.get().then((response) => {
+    api.agents.get().then((response: { error?: unknown; data?: Agent[] }) => {
       setIsLoading(false);
       if (response.error) {
         setError("Erro ao carregar agentes");

@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useEventManager } from "@/app/utils/eventManager";
 import { OPEN_NEW_CHAT_MODAL_EVENT } from "@/app/components/NewChatModal";
+import { OPEN_NOTIFICATION_CENTER_EVENT } from "@/app/utils/notificationTypes";
 import { useRouter, usePathname } from "next/navigation";
 import { getApiClient } from "@/app/utils/client";
 
@@ -48,6 +49,7 @@ export default function QuickBar() {
   const [agentResults, setAgentResults] = useState<AgentResult[]>([]);
   const [chatResults, setChatResults] = useState<ChatResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const eventManager = useEventManager();
   const router = useRouter();
   const pathname = usePathname();
@@ -59,6 +61,19 @@ export default function QuickBar() {
     setAgentResults([]);
     setChatResults([]);
   }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      const api = getApiClient();
+      api.notifications["unread-count"]
+        .get()
+        .then((res: { data?: unknown }) => {
+          const data = res.data as { count: number } | undefined;
+          if (data) setUnreadCount(data.count);
+        })
+        .catch(() => {});
+    }
+  }, [isOpen]);
 
   const commands: Command[] = [
     {
@@ -128,6 +143,17 @@ export default function QuickBar() {
       },
     },
     {
+      id: "notifications",
+      name: `Ver Notificações${unreadCount > 0 ? ` (${unreadCount})` : ""}`,
+      description: "Visualizar e gerenciar notificações",
+      type: "command",
+      category: "Sistema",
+      action: () => {
+        eventManager.dispatchEvent(OPEN_NOTIFICATION_CENTER_EVENT);
+        onClose();
+      },
+    },
+    {
       id: "new-agent",
       name: "Novo Agente",
       description: "Criar um novo agente personalizado",
@@ -178,16 +204,16 @@ export default function QuickBar() {
         const chatsData = chatsRes.data ?? [];
 
         setAgentResults(
-          agentsData.map((a) => ({
-            id: a.id,
-            name: a.name,
+          agentsData.map((a: Record<string, unknown>) => ({
+            id: a.id as string,
+            name: a.name as string,
             type: "agent" as const,
           })),
         );
         setChatResults(
-          chatsData.map((c) => ({
-            id: c.id,
-            title: c.title,
+          chatsData.map((c: Record<string, unknown>) => ({
+            id: c.id as string,
+            title: c.title as string,
             type: "chat" as const,
           })),
         );

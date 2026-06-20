@@ -60,14 +60,14 @@ export default function AgentForm({ initialData }: AgentFormProps) {
 
   useEffect(() => {
     const api = getApiClient();
-    api.tools.get().then((response) => {
+    api.tools.get().then((response: { error?: unknown; data?: Record<string, unknown>[] }) => {
       if (!response.error && response.data) {
-        setAvailableTools(response.data as ToolOption[]);
+        setAvailableTools(response.data as unknown as ToolOption[]);
       }
     });
-    api["mcp-servers"].get().then((response) => {
+    api["mcp-servers"].get().then((response: { error?: unknown; data?: Record<string, unknown>[] }) => {
       if (!response.error && response.data) {
-        setMcpServers(response.data);
+        setMcpServers(response.data as unknown as MCPServerWithTools[]);
       }
     });
   }, []);

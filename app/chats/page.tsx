@@ -70,7 +70,7 @@ export default function ChatsPage() {
 
   useEffect(() => {
     const api = getApiClient();
-    api.chat.get().then((response) => {
+    api.chat.get().then((response: { error?: unknown; data?: ChatSession[] }) => {
       if (Array.isArray(response.data)) {
         setChatSessions(response.data);
         setIsLoading(false);
