@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { getApiClient } from "@/app/utils/client";
 import MDEditor from "@uiw/react-md-editor";
 import "@uiw/react-md-editor/markdown-editor.css";
+import { Cpu } from "lucide-react";
+import ModelPickerModal from "@/app/components/ModelPickerModal";
 
 interface ToolOption {
   name: string;
@@ -30,12 +32,6 @@ interface MCPServerWithTools {
   tools: MCPToolInfo[];
 }
 
-interface ModelOption {
-  id: string;
-  name: string;
-  provider: string;
-}
-
 interface AgentFormProps {
   initialData?: {
     id: string;
@@ -57,8 +53,9 @@ export default function AgentForm({ initialData }: AgentFormProps) {
     initialData?.mcpTools ?? [],
   );
   const [model, setModel] = useState(initialData?.model ?? "");
+  const [modelName, setModelName] = useState(initialData?.model ?? "");
+  const [modelPickerOpen, setModelPickerOpen] = useState(false);
   const [availableTools, setAvailableTools] = useState<ToolOption[]>([]);
-  const [models, setModels] = useState<ModelOption[]>([]);
   const [mcpServers, setMcpServers] = useState<MCPServerWithTools[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -77,11 +74,6 @@ export default function AgentForm({ initialData }: AgentFormProps) {
     api["mcp-servers"].get().then((response) => {
       if (!response.error && response.data) {
         setMcpServers(response.data as unknown as MCPServerWithTools[]);
-      }
-    });
-    api.models.get().then((response) => {
-      if (!response.error && response.data) {
-        setModels(response.data as unknown as ModelOption[]);
       }
     });
   }, []);
@@ -164,6 +156,7 @@ export default function AgentForm({ initialData }: AgentFormProps) {
   };
 
   return (
+    <>
     <div
       data-color-mode="dark"
       className="flex flex-col flex-1 mx-auto p-6 w-full max-w-4xl"
@@ -242,25 +235,19 @@ export default function AgentForm({ initialData }: AgentFormProps) {
           <p className="mb-3 text-xs text-base-content/60">
             Selecione o modelo de IA que este agente utilizará
           </p>
-          <select
-            className="w-full select select-bordered"
-            value={model}
-            onChange={(e) => setModel(e.target.value)}
+          <button
+            type="button"
+            className="w-full btn btn-outline justify-between"
+            onClick={() => setModelPickerOpen(true)}
           >
-            <option value="" disabled>
-              Selecione um modelo...
-            </option>
-            {models.length === 0 && (
-              <option value="" disabled>
-                Carregando modelos...
-              </option>
-            )}
-            {models.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.provider}: {m.name} ({m.id})
-              </option>
-            ))}
-          </select>
+            <span className="flex items-center gap-2">
+              <Cpu className="w-4 h-4" />
+              <span className={model ? "" : "text-base-content/60"}>
+                {modelName || "Selecione um modelo..."}
+              </span>
+            </span>
+            <span className="text-base-content/40 text-xs">Buscar</span>
+          </button>
         </fieldset>
 
         <fieldset className="fieldset">
@@ -370,5 +357,16 @@ export default function AgentForm({ initialData }: AgentFormProps) {
         )}
       </div>
     </div>
+      <ModelPickerModal
+        isOpen={modelPickerOpen}
+        onClose={() => setModelPickerOpen(false)}
+        title="Selecionar Modelo"
+        onSelect={(m) => {
+          setModel(m.id);
+          setModelName(`${m.provider}: ${m.name}`);
+          setModelPickerOpen(false);
+        }}
+      />
+    </>
   );
 }
