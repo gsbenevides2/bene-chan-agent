@@ -16,6 +16,11 @@ export const ChatSessionSchema = z.object({
     description: "The date and time when the chat session was created",
     example: "2024-01-01T12:00:00Z",
   }),
+  model: z.string().nullable().meta({
+    title: "Model",
+    description: "The model for this chat session (null if using agent default)",
+    example: "openai/gpt-4o",
+  }),
 });
 
 // GET /chat
@@ -92,6 +97,31 @@ export const SearchChatSessionsQuerySchema = z.object({
   q: z.string().min(1),
 });
 
+// PUT /chat/:sessionId/model
+export const UpdateChatModelParamSchema = z.object({
+  sessionId: z.uuidv4().meta({
+    title: "Session ID",
+    description: "The ID of the chat session to update the model for",
+    example: "123e4567-e89b-12d3-a456-426614174000",
+  }),
+});
+
+export const UpdateChatModelBodySchema = z.object({
+  model: z.string().min(1).meta({
+    title: "Model",
+    description: "The model to use for this chat session",
+    example: "anthropic/claude-3-opus",
+  }),
+});
+
+export const UpdateChatModelResponseSchema = z.object({
+  success: z.boolean().meta({
+    title: "Success",
+    description: "Indicates whether the model was successfully updated",
+    example: true,
+  }),
+});
+
 export const ChatModel = {
   ChatSessionSchema,
   CreateChatSessionPostBodySchema,
@@ -103,6 +133,9 @@ export const ChatModel = {
   UpdateChatSessionBodySchema,
   UpdateChatSessionResponseSchema,
   SearchChatSessionsQuerySchema,
+  UpdateChatModelParamSchema,
+  UpdateChatModelBodySchema,
+  UpdateChatModelResponseSchema,
 };
 
 export type ChatSession = z.infer<typeof ChatSessionSchema>;

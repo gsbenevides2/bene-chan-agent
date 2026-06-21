@@ -6,6 +6,7 @@ import { chat } from "@/server/modules/chat";
 import cors from "@elysia/cors";
 import { tools } from "@/server/modules/tools";
 import { agents } from "@/server/modules/agents";
+import { models } from "@/server/modules/models";
 import { mcpServers } from "@/server/modules/mcp-servers";
 import { notifications } from "@/server/modules/notifications";
 
@@ -30,6 +31,9 @@ const app = new Elysia({ prefix: "/api" })
             name: "Agents",
           },
           {
+            name: "Models",
+          },
+          {
             name: "MCP Servers",
           },
           {
@@ -52,6 +56,7 @@ const app = new Elysia({ prefix: "/api" })
   .use(chat)
   .use(tools)
   .use(agents)
+  .use(models)
   .use(mcpServers)
   .use(notifications);
 

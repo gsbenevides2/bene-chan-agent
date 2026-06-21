@@ -10,4 +10,5 @@ Um plano de implementação é um documento em markdown que fica na pasta plans 
 Ao refinar um plano sempre se atente as seguintes questões:
 1. Analise os arquivos do projeto e questione possíveis duvídas que encontrar olhando os arquivos e o plano.
 2. Sempre questione se deseja que os testes sejam feitos por você(agente) ou sem execução de testes com navegador ou somente teste de build ou somente uso de TSC.
-3. 
+3. Nunca implemente nada, você tem a unica função de refinar o plano. 
+4. Sempre ao terminar uma rodada de perguntas, você deve refinar o plano novamente e continuar a refinar até que esteja completo.

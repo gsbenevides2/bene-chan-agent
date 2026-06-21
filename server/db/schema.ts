@@ -6,6 +6,7 @@ export const agents = p.pgTable("agents", {
   systemPrompt: p.text().notNull(),
   tools: p.text().array().notNull().default([]),
   mcpTools: p.jsonb("mcp_tools").notNull().default([]),
+  model: p.text("model").notNull(),
 });
 
 export const chatSessions = p.pgTable(
@@ -25,6 +26,7 @@ export const chatSessions = p.pgTable(
       .references(() => agents.id, {
         onDelete: "restrict",
       }),
+    model: p.text("model"),
   },
   (table) => [p.index("idx_chat_sessions_agent_id").on(table.agentId)],
 );

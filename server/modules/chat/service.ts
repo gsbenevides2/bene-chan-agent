@@ -35,6 +35,27 @@ export class ChatService {
     return result;
   }
 
+  static async getChat(sessionId: string) {
+    const result = await db
+      .select({
+        id: chatSessions.id,
+        title: chatSessions.title,
+        createdAt: chatSessions.createdAt,
+        agentId: chatSessions.agentId,
+        model: chatSessions.model,
+        effectiveModel: agents.model,
+      })
+      .from(chatSessions)
+      .innerJoin(agents, eq(chatSessions.agentId, agents.id))
+      .where(eq(chatSessions.id, sessionId));
+    const session = result.at(0);
+    if (!session) throw new Error("Chat session not found");
+    return {
+      ...session,
+      model: session.model ?? session.effectiveModel,
+    };
+  }
+
   static async deleteChat(sessionId: string) {
     await db.delete(chatSessions).where(eq(chatSessions.id, sessionId));
   }
@@ -62,6 +83,32 @@ export class ChatService {
         toolName: string;
       }[],
     };
+  }
+
+  static async getAgentModel(sessionId: string) {
+    const result = await db
+      .select({
+        sessionModel: chatSessions.model,
+        agentModel: agents.model,
+      })
+      .from(chatSessions)
+      .innerJoin(agents, eq(chatSessions.agentId, agents.id))
+      .where(eq(chatSessions.id, sessionId));
+
+    const row = result.at(0);
+    if (!row) throw new Error("Chat session not found");
+
+    return (row.sessionModel ?? row.agentModel) as string;
+  }
+
+  static async updateSessionModel(
+    sessionId: string,
+    model: string,
+  ) {
+    await db
+      .update(chatSessions)
+      .set({ model })
+      .where(eq(chatSessions.id, sessionId));
   }
 
   static async updateChat(sessionId: string, newTitle: string) {

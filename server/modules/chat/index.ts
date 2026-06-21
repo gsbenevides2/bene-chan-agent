@@ -53,6 +53,20 @@ export const chat = new Elysia({
       },
     },
   )
+  .get(
+    "/:sessionId",
+    async ({ params }) => {
+      return await ChatService.getChat(params.sessionId);
+    },
+    {
+      params: ChatModel.DeleteChatSessionParamSchema,
+      response: ChatModel.ChatSessionSchema,
+      detail: {
+        summary: "Get a chat session",
+        description: "Retrieve a chat session by its ID.",
+      },
+    },
+  )
   .delete(
     "/:sessionId",
     async ({ params }) => {
@@ -85,6 +99,25 @@ export const chat = new Elysia({
       detail: {
         summary: "Update a chat session",
         description: "Update the title of an existing chat session by its ID.",
+      },
+    },
+  )
+  .put(
+    "/:sessionId/model",
+    async ({ body, params }) => {
+      await ChatService.updateSessionModel(params.sessionId, body.model);
+      return {
+        success: true,
+      };
+    },
+    {
+      params: ChatModel.UpdateChatModelParamSchema,
+      body: ChatModel.UpdateChatModelBodySchema,
+      response: ChatModel.UpdateChatModelResponseSchema,
+      detail: {
+        summary: "Update chat session model",
+        description:
+          "Update the model used by a specific chat session. This overrides the agent's default model.",
       },
     },
   );

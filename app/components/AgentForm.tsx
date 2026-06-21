@@ -30,6 +30,12 @@ interface MCPServerWithTools {
   tools: MCPToolInfo[];
 }
 
+interface ModelOption {
+  id: string;
+  name: string;
+  provider: string;
+}
+
 interface AgentFormProps {
   initialData?: {
     id: string;
@@ -37,6 +43,7 @@ interface AgentFormProps {
     systemPrompt: string;
     tools?: string[];
     mcpTools?: MCPToolRef[];
+    model?: string;
   };
 }
 
@@ -49,7 +56,9 @@ export default function AgentForm({ initialData }: AgentFormProps) {
   const [mcpTools, setMcpTools] = useState<MCPToolRef[]>(
     initialData?.mcpTools ?? [],
   );
+  const [model, setModel] = useState(initialData?.model ?? "");
   const [availableTools, setAvailableTools] = useState<ToolOption[]>([]);
+  const [models, setModels] = useState<ModelOption[]>([]);
   const [mcpServers, setMcpServers] = useState<MCPServerWithTools[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -68,6 +77,11 @@ export default function AgentForm({ initialData }: AgentFormProps) {
     api["mcp-servers"].get().then((response) => {
       if (!response.error && response.data) {
         setMcpServers(response.data as unknown as MCPServerWithTools[]);
+      }
+    });
+    api.models.get().then((response) => {
+      if (!response.error && response.data) {
+        setModels(response.data as unknown as ModelOption[]);
       }
     });
   }, []);
@@ -111,7 +125,7 @@ export default function AgentForm({ initialData }: AgentFormProps) {
   };
 
   const handleSave = async () => {
-    if (!name.trim() || !systemPrompt.trim()) return;
+    if (!name.trim() || !systemPrompt.trim() || !model) return;
     setIsSaving(true);
     setError(null);
     const api = getApiClient();
@@ -122,6 +136,7 @@ export default function AgentForm({ initialData }: AgentFormProps) {
           systemPrompt: systemPrompt.trim(),
           tools,
           mcpTools,
+          model,
         });
         if (response.error) {
           setError("Erro ao atualizar agente");
@@ -133,6 +148,7 @@ export default function AgentForm({ initialData }: AgentFormProps) {
           systemPrompt: systemPrompt.trim(),
           tools,
           mcpTools,
+          model,
         });
         if (response.error) {
           setError("Erro ao criar agente");
@@ -173,7 +189,7 @@ export default function AgentForm({ initialData }: AgentFormProps) {
           <button
             onClick={handleSave}
             className="btn btn-primary"
-            disabled={!name.trim() || !systemPrompt.trim() || isSaving}
+            disabled={!name.trim() || !systemPrompt.trim() || !model || isSaving}
           >
             {isSaving ? (
               <span className="loading loading-spinner loading-sm" />
@@ -219,6 +235,32 @@ export default function AgentForm({ initialData }: AgentFormProps) {
               visibleDragbar={false}
             />
           </div>
+        </fieldset>
+
+        <fieldset className="fieldset">
+          <legend className="pb-2 font-medium text-sm">Modelo</legend>
+          <p className="mb-3 text-xs text-base-content/60">
+            Selecione o modelo de IA que este agente utilizará
+          </p>
+          <select
+            className="w-full select select-bordered"
+            value={model}
+            onChange={(e) => setModel(e.target.value)}
+          >
+            <option value="" disabled>
+              Selecione um modelo...
+            </option>
+            {models.length === 0 && (
+              <option value="" disabled>
+                Carregando modelos...
+              </option>
+            )}
+            {models.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.provider}: {m.name} ({m.id})
+              </option>
+            ))}
+          </select>
         </fieldset>
 
         <fieldset className="fieldset">

@@ -11,6 +11,7 @@ import {
   Bot,
   MessageSquare,
   Beaker,
+  Cpu,
 } from "lucide-react";
 import { useEventManager } from "@/app/utils/eventManager";
 import { OPEN_NEW_CHAT_MODAL_EVENT } from "@/app/components/NewChatModal";
@@ -40,7 +41,14 @@ interface ChatResult {
   type: "chat";
 }
 
-type QuickItem = Command | AgentResult | ChatResult;
+interface ModelResult {
+  id: string;
+  name: string;
+  provider: string;
+  type: "model";
+}
+
+type QuickItem = Command | AgentResult | ChatResult | ModelResult;
 
 export default function QuickBar() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -51,6 +59,8 @@ export default function QuickBar() {
   const [chatResults, setChatResults] = useState<ChatResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [modelResults, setModelResults] = useState<ModelResult[]>([]);
+  const [isLoadingModels, setIsLoadingModels] = useState(false);
   const eventManager = useEventManager();
   const router = useRouter();
   const pathname = usePathname();
@@ -61,6 +71,7 @@ export default function QuickBar() {
     setIsOpen(false);
     setAgentResults([]);
     setChatResults([]);
+    setModelResults([]);
   }, []);
 
   useEffect(() => {
@@ -166,6 +177,32 @@ export default function QuickBar() {
       },
     },
     {
+      id: "trocar-modelo",
+      name: "Trocar Modelo",
+      description: "Alterar o modelo de IA da conversa atual",
+      type: "command",
+      category: "Chat",
+      disabled: !isOnChatPage,
+      action: async () => {
+        setIsLoadingModels(true);
+        setSearchTerm("");
+        const api = getApiClient();
+        try {
+          const response = await api.models.get();
+          if (!response.error && response.data) {
+            const models = response.data as unknown as ModelResult[];
+            setModelResults(
+              models.map((m) => ({ ...m, type: "model" as const })),
+            );
+          }
+        } catch {
+          setModelResults([]);
+        } finally {
+          setIsLoadingModels(false);
+        }
+      },
+    },
+    {
       id: "tools-test",
       name: "Tool Tester",
       description: "Testar ferramentas do sistema",
@@ -185,10 +222,10 @@ export default function QuickBar() {
         command.description.toLowerCase().includes(searchTerm.toLowerCase())),
   );
 
-  const allItems = useMemo(
-    () => [...filteredCommands, ...agentResults, ...chatResults],
-    [agentResults, chatResults, filteredCommands],
-  );
+  const allItems = useMemo(() => {
+    if (modelResults.length > 0) return modelResults as QuickItem[];
+    return [...filteredCommands, ...agentResults, ...chatResults];
+  }, [agentResults, chatResults, filteredCommands, modelResults]);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
 
@@ -290,6 +327,13 @@ export default function QuickBar() {
             } else if (item.type === "chat") {
               router.push(`/chat/${item.id}`);
               onClose();
+            } else if (item.type === "model" && currentSessionId) {
+              const api = getApiClient();
+              api
+                .chat({ sessionId: currentSessionId })
+                .model.put({ model: item.id })
+                .then(() => onClose())
+                .catch(() => onClose());
             }
           }
           break;
@@ -351,24 +395,28 @@ export default function QuickBar() {
       }
     }
     if (item.type === "agent") return <Bot className="w-4 h-4" />;
+    if (item.type === "model") return <Cpu className="w-4 h-4" />;
     return <MessageSquare className="w-4 h-4" />;
   };
 
   const getItemName = (item: QuickItem) => {
     if (item.type === "command") return item.name;
     if (item.type === "agent") return item.name;
+    if (item.type === "model") return item.name;
     return item.title;
   };
 
   const getItemDescription = (item: QuickItem) => {
     if (item.type === "command") return item.description;
     if (item.type === "agent") return "Agente";
+    if (item.type === "model") return item.provider;
     return "Chat";
   };
 
   const getItemCategory = (item: QuickItem) => {
     if (item.type === "command") return item.category;
     if (item.type === "agent") return "Agentes";
+    if (item.type === "model") return "Modelos";
     return "Chat";
   };
 
@@ -402,7 +450,11 @@ export default function QuickBar() {
             <div className="py-8 text-base-content/70 text-center">
               <Command className="opacity-50 mx-auto mb-2 w-12 h-12" />
               <p>
-                {isSearching ? "Buscando..." : "Nenhum resultado encontrado"}
+                {isLoadingModels
+                  ? "Carregando modelos..."
+                  : isSearching
+                    ? "Buscando..."
+                    : "Nenhum resultado encontrado"}
               </p>
             </div>
           ) : (
@@ -419,6 +471,13 @@ export default function QuickBar() {
                     } else if (item.type === "chat") {
                       router.push(`/chat/${item.id}`);
                       onClose();
+                    } else if (item.type === "model" && currentSessionId) {
+                      const api = getApiClient();
+                      api
+                        .chat({ sessionId: currentSessionId })
+                        .model.put({ model: item.id })
+                        .then(() => onClose())
+                        .catch(() => onClose());
                     }
                   }}
                   onMouseEnter={() => setSelectedIndex(index)}

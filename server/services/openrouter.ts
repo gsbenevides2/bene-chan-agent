@@ -21,6 +21,7 @@ export class OpenRouterService {
   });
 
   static async *streamChat(
+    model: string,
     newMessages: ChatMessage[],
     chatId: string,
     toolsFilter?: string[],
@@ -29,7 +30,7 @@ export class OpenRouterService {
     const parsedHistory = this.transformHistory(newMessages);
     const stream = await this.openRouter.chat.send({
       chatRequest: {
-        model: "openai/gpt-4o",
+        model,
         messages: parsedHistory,
         stream: true,
         sessionId: chatId,
@@ -83,6 +84,7 @@ export class OpenRouterService {
       if (toolCallsResults.length > 0) {
         finalMessages = [...newMessages, ...finalMessages, ...toolCallsResults];
         const message = this.streamChat(
+          model,
           finalMessages,
           chatId,
           toolsFilter,

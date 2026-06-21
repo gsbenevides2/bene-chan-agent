@@ -42,6 +42,11 @@ export const AgentSchema = z.object({
       description: "List of MCP tool references this agent can use",
       example: [{ serverId: "uuid", toolName: "create-pr" }],
     }),
+  model: z.string().meta({
+    title: "Model",
+    description: "The AI model to use for this agent",
+    example: "openai/gpt-4o",
+  }),
 });
 
 export const CreateAgentBodySchema = z.object({
@@ -85,6 +90,11 @@ export const CreateAgentBodySchema = z.object({
       description: "List of MCP tool references this agent can use",
       example: [{ serverId: "uuid", toolName: "create-pr" }],
     }),
+  model: z.string().min(1).meta({
+    title: "Model",
+    description: "The AI model to use for this agent",
+    example: "openai/gpt-4o",
+  }),
 });
 
 export const UpdateAgentBodySchema = z.object({
@@ -128,6 +138,11 @@ export const UpdateAgentBodySchema = z.object({
       description: "List of MCP tool references this agent can use",
       example: [{ serverId: "uuid", toolName: "create-pr" }],
     }),
+  model: z.string().min(1).optional().meta({
+    title: "Model",
+    description: "The AI model to use for this agent",
+    example: "openai/gpt-4o",
+  }),
 });
 
 export const UpdateAgentParamSchema = z.object({
