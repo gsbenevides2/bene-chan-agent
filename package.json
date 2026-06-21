@@ -25,6 +25,7 @@
     "db:view": "bunx --bun drizzle-kit studio"
   },
   "dependencies": {
+    "@cfworker/json-schema": "^4.1.1",
     "@elysia/cors": "^1.4.2",
     "@elysia/eden": "^1.4.10",
     "@elysia/openapi": "^1.4.15",

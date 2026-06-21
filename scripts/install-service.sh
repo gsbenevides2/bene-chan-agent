@@ -6,7 +6,10 @@ SERVICE_NAME="bene-chan-agent"
 SERVICE_FILE="$HOME/.config/systemd/user/${SERVICE_NAME}.service"
 
 echo "==> Installing dependencies..."
-bun install --cwd "$PROJECT_DIR"
+bun install --frozen-lockfile --cwd "$PROJECT_DIR"
+
+echo "Sync Database"
+bun run db:sync
 
 echo "==> Building project..."
 bun run --cwd "$PROJECT_DIR" build
