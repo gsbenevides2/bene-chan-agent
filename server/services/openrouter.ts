@@ -12,8 +12,12 @@ import {
 import { receivedMessagesProcessor } from "../utils/openRouterMessageProcessor";
 import { ToolService } from "./tools";
 import { ChatService } from "../modules/chat/service";
+import { trace, SpanStatusCode } from "@opentelemetry/api";
+import { BeneChanSemConv } from "@/server/telemetry/semconv";
 
 type McpTools = Awaited<ReturnType<typeof ChatService.resolveMCPToolRefs>>;
+
+const tracer = trace.getTracer("bene-chan");
 
 export class OpenRouterService {
   static openRouter = new OpenRouter({
@@ -27,73 +31,97 @@ export class OpenRouterService {
     toolsFilter?: string[],
     mcpTools?: McpTools,
   ): AsyncGenerator<ChatMessage, void, unknown> {
-    const parsedHistory = this.transformHistory(newMessages);
-    const stream = await this.openRouter.chat.send({
-      chatRequest: {
-        model,
-        messages: parsedHistory,
-        stream: true,
-        sessionId: chatId,
-        tools: ToolService.getToolsDefinition(toolsFilter, mcpTools),
+    const span = tracer.startSpan("openrouter.streamChat", {
+      attributes: {
+        [BeneChanSemConv.OPENROUTER_MODEL]: model,
+        [BeneChanSemConv.OPENROUTER_MESSAGE_COUNT]: newMessages.length,
       },
     });
 
-    const processor = receivedMessagesProcessor();
-    let finalMessages: ChatMessage[] = [];
-    let finishReason: ChatFinishReasonEnum | null = null;
-
-    for await (const chunk of stream) {
-      const firstChoice = chunk.choices[0];
-      if (!firstChoice) continue;
-      if (firstChoice.finishReason) {
-        finalMessages = processor.alreadyProcessedMessages;
-        finishReason = firstChoice.finishReason;
-        break;
-      }
-      const message = processor.receiveStreamingMessage(firstChoice);
-      if (message) {
-        yield message;
-      }
-    }
-    await MessageService.saveMultipleMessages(chatId, finalMessages);
-
-    if (finishReason === "tool_calls") {
-      const allToolCalls = finalMessages.flatMap((msg) =>
-        "toolCalls" in msg && msg.toolCalls ? msg.toolCalls : [],
-      );
-      const toolCallsResults: ToolResultMessage[] = [];
-
-      for (const toolCall of allToolCalls) {
-        const toolResult = await this.callTool(
-          toolCall.toolName,
-          toolCall.toolArgs,
-          mcpTools,
-        );
-        const toolResultMessage: ToolResultMessage = {
-          id: crypto.randomUUID(),
-          timestamp: new Date(),
-          role: "tool",
-          content: JSON.stringify(toolResult),
-          toolCallId: toolCall.toolId,
-          toolName: toolCall.toolName,
-        };
-        toolCallsResults.push(toolResultMessage);
-        yield toolResultMessage;
-      }
-      await MessageService.saveMultipleMessages(chatId, toolCallsResults);
-      if (toolCallsResults.length > 0) {
-        finalMessages = [...newMessages, ...finalMessages, ...toolCallsResults];
-        const message = this.streamChat(
+    try {
+      const parsedHistory = this.transformHistory(newMessages);
+      const stream = await this.openRouter.chat.send({
+        chatRequest: {
           model,
-          finalMessages,
-          chatId,
-          toolsFilter,
-          mcpTools,
-        );
-        for await (const msg of message) {
-          yield msg;
+          messages: parsedHistory,
+          stream: true,
+          sessionId: chatId,
+          tools: ToolService.getToolsDefinition(toolsFilter, mcpTools),
+        },
+      });
+
+      const processor = receivedMessagesProcessor();
+      let finalMessages: ChatMessage[] = [];
+      let finishReason: ChatFinishReasonEnum | null = null;
+
+      for await (const chunk of stream) {
+        const firstChoice = chunk.choices[0];
+        if (!firstChoice) continue;
+        if (firstChoice.finishReason) {
+          finalMessages = processor.alreadyProcessedMessages;
+          finishReason = firstChoice.finishReason;
+          break;
+        }
+        const message = processor.receiveStreamingMessage(firstChoice);
+        if (message) {
+          yield message;
         }
       }
+
+      span.setAttribute(
+        BeneChanSemConv.OPENROUTER_FINISH_REASON,
+        finishReason ?? "unknown",
+      );
+      await MessageService.saveMultipleMessages(chatId, finalMessages);
+
+      if (finishReason === "tool_calls") {
+        const allToolCalls = finalMessages.flatMap((msg) =>
+          "toolCalls" in msg && msg.toolCalls ? msg.toolCalls : [],
+        );
+        span.setAttribute(
+          BeneChanSemConv.OPENROUTER_TOOL_CALLS,
+          allToolCalls.length,
+        );
+        const toolCallsResults: ToolResultMessage[] = [];
+
+        for (const toolCall of allToolCalls) {
+          const toolResult = await this.callTool(
+            toolCall.toolName,
+            toolCall.toolArgs,
+            mcpTools,
+          );
+          const toolResultMessage: ToolResultMessage = {
+            id: crypto.randomUUID(),
+            timestamp: new Date(),
+            role: "tool",
+            content: JSON.stringify(toolResult),
+            toolCallId: toolCall.toolId,
+            toolName: toolCall.toolName,
+          };
+          toolCallsResults.push(toolResultMessage);
+          yield toolResultMessage;
+        }
+        await MessageService.saveMultipleMessages(chatId, toolCallsResults);
+        if (toolCallsResults.length > 0) {
+          finalMessages = [...newMessages, ...finalMessages, ...toolCallsResults];
+          const message = this.streamChat(
+            model,
+            finalMessages,
+            chatId,
+            toolsFilter,
+            mcpTools,
+          );
+          for await (const msg of message) {
+            yield msg;
+          }
+        }
+      }
+    } catch (error) {
+      span.recordException(error as Error);
+      span.setStatus({ code: SpanStatusCode.ERROR });
+      throw error;
+    } finally {
+      span.end();
     }
   }
 

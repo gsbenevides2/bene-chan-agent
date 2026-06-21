@@ -1,3 +1,9 @@
 import { drizzle } from "drizzle-orm/bun-sql";
+import { instrumentDrizzleClient } from "@kubiks/otel-drizzle";
 
-export const db = drizzle(Bun.env.DATABASE_URL!);
+const rawDb = drizzle(Bun.env.DATABASE_URL!);
+export const db = instrumentDrizzleClient(rawDb, {
+  dbSystem: "postgresql",
+  captureQueryText: true,
+  maxQueryTextLength: 2000,
+});

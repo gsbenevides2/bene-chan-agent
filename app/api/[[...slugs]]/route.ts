@@ -1,5 +1,6 @@
 import { Elysia } from "elysia";
 import { openapi } from "@elysia/openapi";
+import { opentelemetry } from "@elysia/opentelemetry";
 import { healthcheck } from "@/server/modules/healthcheck";
 import { getProjectInfo } from "@/server/utils/getProjectInfo";
 import { chat } from "@/server/modules/chat";
@@ -13,6 +14,11 @@ import { notifications } from "@/server/modules/notifications";
 export const dynamic = "force-dynamic";
 
 const app = new Elysia({ prefix: "/api" })
+  .use(
+    opentelemetry({
+      serviceName: "bene-chan-elysia",
+    }),
+  )
   .use(
     openapi({
       documentation: {

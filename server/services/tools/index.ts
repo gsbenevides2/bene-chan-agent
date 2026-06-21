@@ -21,6 +21,8 @@ import { GhPrView } from "./ghPrView";
 import { OpencodeCli } from "./opencodeCli";
 import { Cwd } from "./cwd";
 import { Terminal } from "./terminal";
+import { trace, SpanStatusCode } from "@opentelemetry/api";
+import { BeneChanSemConv } from "@/server/telemetry/semconv";
 
 interface MCPToolRef {
   serverId: string;
@@ -29,6 +31,8 @@ interface MCPToolRef {
   headers?: { key: string; value: string }[];
   inputSchema?: Record<string, unknown>;
 }
+
+const tracer = trace.getTracer("bene-chan");
 
 export class ToolService {
   static systemTools: Tool<ZodObject | ZodUndefined, unknown>[] = [
@@ -97,35 +101,69 @@ export class ToolService {
     toolArgs: Record<string, unknown> | undefined,
     mcpTools?: MCPToolRef[],
   ): Promise<Result<unknown>> {
-    const systemTool = this.systemTools.find((tool) => tool.name === toolName);
-    if (systemTool) {
-      return systemTool.run(toolArgs);
-    }
+    return tracer.startActiveSpan(`tool.callTool.${toolName}`, async (span) => {
+      span.setAttribute(BeneChanSemConv.TOOL_NAME, toolName);
+      span.setAttribute(
+        BeneChanSemConv.TOOL_ARGS,
+        JSON.stringify(toolArgs).slice(0, 2000),
+      );
 
-    if (mcpTools) {
-      const mcpTool = mcpTools.find((t) => t.toolName === toolName);
-      if (mcpTool) {
-        try {
-          const result = await MCPClientService.callTool(
-            mcpTool.serverUrl,
-            toolName,
-            toolArgs,
-            mcpTool.headers,
+      try {
+        const systemTool = this.systemTools.find(
+          (tool) => tool.name === toolName,
+        );
+        if (systemTool) {
+          const result = await systemTool.run(toolArgs);
+          span.setAttribute(BeneChanSemConv.TOOL_TYPE, "system");
+          span.setAttribute(
+            BeneChanSemConv.TOOL_RESULT,
+            JSON.stringify(result).slice(0, 2000),
           );
-          return { success: true, result };
-        } catch (error) {
-          return {
-            success: false,
-            error:
-              error instanceof Error ? error.message : "MCP tool call failed",
-          };
+          return result;
         }
-      }
-    }
 
-    return {
-      success: false,
-      error: "Unavailable tool",
-    };
+        if (mcpTools) {
+          const mcpTool = mcpTools.find((t) => t.toolName === toolName);
+          if (mcpTool) {
+            span.setAttribute(BeneChanSemConv.TOOL_TYPE, "mcp");
+            try {
+              const mcpResult = await MCPClientService.callTool(
+                mcpTool.serverUrl,
+                toolName,
+                toolArgs,
+                mcpTool.headers,
+              );
+              const result: Result<unknown> = { success: true, result: mcpResult };
+              span.setAttribute(
+                BeneChanSemConv.TOOL_RESULT,
+                JSON.stringify(result).slice(0, 2000),
+              );
+              return result;
+            } catch (error) {
+              const result: Result<unknown> = {
+                success: false,
+                error:
+                  error instanceof Error
+                    ? error.message
+                    : "MCP tool call failed",
+              };
+              return result;
+            }
+          }
+        }
+
+        const result: Result<unknown> = {
+          success: false,
+          error: "Unavailable tool",
+        };
+        return result;
+      } catch (error) {
+        span.recordException(error as Error);
+        span.setStatus({ code: SpanStatusCode.ERROR });
+        throw error;
+      } finally {
+        span.end();
+      }
+    });
   }
 }
