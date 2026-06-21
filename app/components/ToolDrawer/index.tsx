@@ -1,4 +1,4 @@
-import { Code2, X, Play, CheckCircle, XCircle } from "lucide-react";
+import { Code2, X, Play, CheckCircle, XCircle, Copy, Check } from "lucide-react";
 import { useState, useRef, useCallback } from "react";
 import { getApiClient } from "../../utils/client";
 import { JsonFormFields } from "./JsonFormFields";
@@ -131,34 +131,49 @@ export function ToolDrawer({
           </button>
 
           {result && (
-            <div
-              className={`rounded-lg border text-sm ${
-                result.success
-                  ? "bg-success/10 border-success/30"
-                  : "bg-error/10 border-error/30"
-              }`}
-            >
+            <div>
               <div
-                className={`flex items-center gap-2 px-3 py-2.5 border-b font-semibold text-xs ${
+                className={`flex items-center justify-between gap-2 px-3 py-2.5 rounded-box border text-sm ${
                   result.success
-                    ? "border-success/30 text-success"
-                    : "border-error/30 text-error"
+                    ? "bg-success/10 border-success/30 text-success"
+                    : "bg-error/10 border-error/30 text-error"
                 }`}
               >
-                {result.success ? (
-                  <CheckCircle className="w-4 h-4" />
-                ) : (
-                  <XCircle className="w-4 h-4" />
+                <div className="flex items-center gap-2 font-semibold text-xs">
+                  {result.success ? (
+                    <CheckCircle className="w-4 h-4" />
+                  ) : (
+                    <XCircle className="w-4 h-4" />
+                  )}
+                  {result.success ? "Executado com sucesso" : "Erro"}
+                </div>
+                {result.success && (
+                  <button
+                    className="btn btn-ghost btn-xs gap-1"
+                    onClick={() => {
+                      navigator.clipboard.writeText(
+                        JSON.stringify(result.result, null, 2),
+                      );
+                    }}
+                  >
+                    <Copy className="w-3 h-3" />
+                    Copiar JSON
+                  </button>
                 )}
-                {result.success ? "Sucesso" : "Erro"}
               </div>
-              <div className="p-3">
-                {result.success ? (
+
+              {result.success && result.result !== undefined && (
+                <div className="mt-3">
+                  <h4 className="text-xs font-semibold text-base-content/50 uppercase tracking-wider mb-2">
+                    Resultado
+                  </h4>
                   <ResultValue value={result.result} />
-                ) : (
-                  <span className="text-error">{result.error}</span>
-                )}
-              </div>
+                </div>
+              )}
+
+              {!result.success && (
+                <p className="mt-2 text-sm text-error px-1">{result.error}</p>
+              )}
             </div>
           )}
         </div>

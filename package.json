@@ -33,6 +33,7 @@
     "@jsonforms/vanilla-renderers": "^3.8.0",
     "@modelcontextprotocol/client": "2.0.0-alpha.2",
     "@openrouter/sdk": "^0.12.79",
+    "@uiw/react-json-view": "^2.0.0-alpha.43",
     "@uiw/react-md-editor": "^4.1.1",
     "daisyui": "^5.5.23",
     "drizzle-orm": "^0.45.2",
