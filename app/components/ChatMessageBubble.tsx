@@ -1,6 +1,6 @@
 "use client";
 import { ChatMessage } from "@/server/modules/chat/messages/model";
-import { Cog, CheckCircle, Zap, Clock } from "lucide-react";
+import { Zap, Clock } from "lucide-react";
 import { useState } from "react";
 import { remark } from "remark";
 import html from "remark-html";
@@ -29,40 +29,24 @@ export default function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
       message.toolCalls.length > 0);
 
   const getMessageStyle = () => {
-    if (message.role === "tool") {
-      return "bg-gradient-to-r from-success/90 to-success text-success-content shadow-lg border border-success/20";
-    }
-    if (
-      message.role === "assistant" &&
-      message.toolCalls &&
-      message.toolCalls.length > 0
-    ) {
-      return "bg-gradient-to-r from-info/90 to-info text-info-content shadow-lg border border-info/20";
-    }
     return "bg-transparent shadow-none text-base-content";
-  };
-
-  const getMessageIcon = () => {
-    if (message.role === "tool") {
-      return (
-        <CheckCircle className="inline mr-3 w-5 h-5 text-success-content/80" />
-      );
-    }
-    if (
-      message.role === "assistant" &&
-      message.toolCalls &&
-      message.toolCalls.length > 0
-    ) {
-      return (
-        <Cog className="inline mr-3 w-5 h-5 text-info-content/80 animate-spin" />
-      );
-    }
-    return null;
   };
 
   const markdownToHtml = (markdown: string) => {
     const result = remark().use(html).processSync(markdown);
     return result.toString();
+  };
+
+  const parseContent = (content: string, parseTimes = 1) => {
+    try {
+      let result = content;
+      for (let i = 1; i <= parseTimes; i++) {
+        result = JSON.parse(result);
+      }
+      return JSON.stringify(result, null, 2);
+    } catch (error) {
+      return content;
+    }
   };
 
   const formatMessageContent = () => {
@@ -73,20 +57,25 @@ export default function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
     ) {
       return (
         <div className="space-y-3">
+          {message.content ? (
+            <div
+              className="mb-3"
+              dangerouslySetInnerHTML={{
+                __html: markdownToHtml(message.content),
+              }}
+            />
+          ) : null}
           {message.toolCalls.map((toolCall) => (
             <div key={toolCall.id}>
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-sm">
                   <svg
-                    className={`inline mr-1 w-4 h-4 ${openMessage ? "rotate-180" : "rotate-90"} transition-transform`}
+                    className={`inline mr-1 w-2 h-2 ${openMessage ? "rotate-180" : "rotate-90"} transition-transform`}
                     viewBox="0 0 100 100"
                   >
-                    <polygon points="10,80 90,80 50,10" fill="#000" />
+                    <polygon points="10,80 90,80 50,10" fill="#fff" />
                   </svg>
-                  Executando:{" "}
-                  <span className="font-mono text-info-content/90">
-                    {toolCall.toolName}
-                  </span>
+                  Executando: {toolCall.toolName}
                 </span>
               </div>
               {toolCall.toolArgs && openMessage ? (
@@ -97,8 +86,8 @@ export default function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
                       Parâmetros:
                     </span>
                   </div>
-                  <pre className="max-h-32 overflow-auto font-mono text-info-content/80 text-xs leading-relaxed">
-                    {JSON.stringify(JSON.parse(toolCall.toolArgs), null, 2)}
+                  <pre className="max-h-32 overflow-auto font-mono text-xs leading-relaxed">
+                    {parseContent(toolCall.toolArgs, 2)}
                   </pre>
                 </div>
               ) : null}
@@ -120,15 +109,12 @@ export default function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
           <div className="flex items-center gap-2">
             <span className="font-semibold text-sm">
               <svg
-                className={`inline mr-1 w-4 h-4 ${openMessage ? "rotate-180" : "rotate-90"} transition-transform`}
+                className={`inline mr-1 w-2 h-2 ${openMessage ? "rotate-180" : "rotate-90"} transition-transform`}
                 viewBox="0 0 100 100"
               >
-                <polygon points="10,80 90,80 50,10" fill="#000" />
+                <polygon points="10,80 90,80 50,10" fill="#fff" />
               </svg>
-              <span className="font-mono text-success-content/90">
-                {message.toolName}
-              </span>{" "}
-              - Concluído
+              Execução de {message.toolName} concluída!
             </span>
           </div>
           {openMessage && message.content ? (
@@ -139,8 +125,8 @@ export default function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
                   Resultado:
                 </span>
               </div>
-              <pre className="max-h-40 overflow-auto font-mono text-success-content/80 text-xs leading-relaxed">
-                {message.content}
+              <pre className="max-h-40 overflow-auto font-mono text-xs leading-relaxed">
+                {parseContent(message.content, 1)}
               </pre>
             </div>
           ) : null}
@@ -179,7 +165,6 @@ export default function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
 
       <div className={`p-4 text-sm rounded-xl ${getMessageStyle()}`}>
         <div className="flex items-start">
-          {getMessageIcon()}
           <div className="flex-1">{formatMessageContent()}</div>
         </div>
       </div>
