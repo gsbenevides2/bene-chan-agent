@@ -2,6 +2,14 @@ import z, { ZodObject, ZodUndefined } from "zod";
 import { GetWeather } from "./getWeather";
 import { Result, Tool } from "./types";
 import { MCPClientService } from "../mcp-client";
+import { WriteFile } from "./writeFile";
+import { EditFile } from "./editFile";
+import { Mkdir } from "./mkdir";
+import { DeleteFile } from "./deleteFile";
+import { EditFiles } from "./editFiles";
+import { ReadFiles } from "./readFiles";
+import { ReadDir } from "./readDir";
+import { WriteFiles } from "./writeFiles";
 
 interface MCPToolRef {
   serverId: string;
@@ -14,6 +22,14 @@ interface MCPToolRef {
 export class ToolService {
   static systemTools: Tool<ZodObject | ZodUndefined, unknown>[] = [
     new GetWeather(),
+    new WriteFile(),
+    new EditFile(),
+    new Mkdir(),
+    new DeleteFile(),
+    new EditFiles(),
+    new ReadFiles(),
+    new ReadDir(),
+    new WriteFiles(),
   ];
 
   static getToolsDefinition(filter: string[] = [], mcpTools?: MCPToolRef[]) {
