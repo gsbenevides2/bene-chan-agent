@@ -9,7 +9,7 @@ echo "==> Installing dependencies..."
 bun install --frozen-lockfile --cwd "$PROJECT_DIR"
 
 echo "Sync Database"
-bun run db:sync
+bun run db:push
 
 echo "==> Building project..."
 bun run --cwd "$PROJECT_DIR" build
