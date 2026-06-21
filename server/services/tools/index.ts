@@ -10,6 +10,17 @@ import { EditFiles } from "./editFiles";
 import { ReadFiles } from "./readFiles";
 import { ReadDir } from "./readDir";
 import { WriteFiles } from "./writeFiles";
+import { GitCreateBranch } from "./gitCreateBranch";
+import { GitCommit } from "./gitCommit";
+import { GitPush } from "./gitPush";
+import { GitInit } from "./gitInit";
+import { GitDiff } from "./gitDiff";
+import { GhRepoCreate } from "./ghRepoCreate";
+import { GhPrCreate } from "./ghPrCreate";
+import { GhPrView } from "./ghPrView";
+import { OpencodeCli } from "./opencodeCli";
+import { Cwd } from "./cwd";
+import { Terminal } from "./terminal";
 
 interface MCPToolRef {
   serverId: string;
@@ -30,6 +41,17 @@ export class ToolService {
     new ReadFiles(),
     new ReadDir(),
     new WriteFiles(),
+    new GitCreateBranch(),
+    new GitCommit(),
+    new GitPush(),
+    new GhRepoCreate(),
+    new GhPrCreate(),
+    new GhPrView(),
+    new GitInit(),
+    new GitDiff(),
+    new OpencodeCli(),
+    new Cwd(),
+    new Terminal(),
   ];
 
   static getToolsDefinition(filter: string[] = [], mcpTools?: MCPToolRef[]) {
