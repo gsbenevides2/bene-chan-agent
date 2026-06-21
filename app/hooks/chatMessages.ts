@@ -49,7 +49,7 @@ export function useMessages(sessionId: string) {
     apiClient
       .chat({ sessionId })
       .messages.get()
-      .then((response: { error?: unknown; data?: ChatMessage[] }) => {
+      .then((response) => {
         if (response.error) {
           error("Erro ao carregar mensagens");
           return;
