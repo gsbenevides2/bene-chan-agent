@@ -8,6 +8,7 @@ import {
   isBooleanControl,
   isEnumControl,
   isObjectArrayControl,
+  isPrimitiveArrayControl,
   composePaths,
   createDefaultValue,
   findUISchema,
@@ -24,7 +25,6 @@ import type {
   ControlProps,
   ArrayControlProps,
   LayoutProps,
-  UISchemaElement,
 } from "@jsonforms/core";
 import { Trash2, Plus, ChevronUp, ChevronDown } from "lucide-react";
 import { useMemo } from "react";
@@ -176,7 +176,92 @@ function EnumControl({
   );
 }
 
-function ArrayControlRenderer({
+function PrimitiveArrayControl({
+  data,
+  path,
+  label,
+  errors,
+  schema,
+  rootSchema,
+  addItem,
+  removeItems,
+}: ArrayControlProps) {
+  const items = (data ?? []) as unknown[];
+  const itemSchema = schema.items as JsonSchema | undefined;
+  const itemType = itemSchema?.type ?? "string";
+
+  return (
+    <div className="space-y-2">
+      <div>
+        <label className="block text-sm font-medium text-base-content">
+          {label}
+        </label>
+      </div>
+
+      {items.length === 0 && (
+        <p className="text-xs text-base-content/40 italic py-2">
+          Nenhum item adicionado
+        </p>
+      )}
+
+      <div className="space-y-2">
+        {items.map((item, index) => (
+          <div key={`${path}-${index}`} className="flex items-center gap-2">
+            {itemType === "number" || itemType === "integer" ? (
+              <input
+                type="number"
+                className="input input-bordered w-full input-sm"
+                value={item as string ?? ""}
+                step={itemType === "integer" ? "1" : "0.01"}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  removeItems?.(path, [index])();
+                  if (val !== "") {
+                    const parsed = itemType === "integer" ? parseInt(val, 10) : parseFloat(val);
+                    addItem(path, isNaN(parsed) ? val : parsed)();
+                  }
+                }}
+              />
+            ) : (
+              <input
+                type="text"
+                className="input input-bordered w-full input-sm"
+                value={item as string ?? ""}
+                onChange={(e) => {
+                  removeItems?.(path, [index])();
+                  addItem(path, e.target.value)();
+                }}
+              />
+            )}
+            <button
+              type="button"
+              className="btn btn-ghost btn-xs text-error"
+              onClick={() => removeItems?.(path, [index])()}
+            >
+              <Trash2 className="w-3 h-3" />
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {errors && <p className="text-error text-xs">{errors}</p>}
+
+      <button
+        type="button"
+        className="btn btn-primary btn-sm mt-1"
+        onClick={() => {
+          const defaultVal = itemType === "number" || itemType === "integer" ? 0 : "";
+          addItem(path, defaultVal)();
+        }}
+      >
+        <Plus className="w-3.5 h-3.5" />
+        Adicionar item
+      </button>
+    </div>
+  );
+}
+
+function ArrayObjectControl({
   data,
   path,
   label,
@@ -341,7 +426,8 @@ const ConnectedTextControl = withJsonFormsControlProps(TextControl);
 const ConnectedNumberControl = withJsonFormsControlProps(NumberControl);
 const ConnectedBooleanControl = withJsonFormsControlProps(BooleanControl);
 const ConnectedEnumControl = withJsonFormsControlProps(EnumControl);
-const ConnectedArrayControl = withJsonFormsArrayControlProps(ArrayControlRenderer);
+const ConnectedArrayObjectControl = withJsonFormsArrayControlProps(ArrayObjectControl);
+const ConnectedPrimitiveArrayControl = withJsonFormsArrayControlProps(PrimitiveArrayControl);
 
 export const customRenderers = [
   { tester: rankWith(1, uiTypeIs("VerticalLayout")), renderer: ConnectedVerticalLayout },
@@ -351,7 +437,8 @@ export const customRenderers = [
   { tester: rankWith(10, isIntegerControl), renderer: ConnectedNumberControl },
   { tester: rankWith(10, isBooleanControl), renderer: ConnectedBooleanControl },
   { tester: rankWith(10, isEnumControl), renderer: ConnectedEnumControl },
-  { tester: rankWith(10, isObjectArrayControl), renderer: ConnectedArrayControl },
+  { tester: rankWith(10, isObjectArrayControl), renderer: ConnectedArrayObjectControl },
+  { tester: rankWith(10, isPrimitiveArrayControl), renderer: ConnectedPrimitiveArrayControl },
 ];
 
 export function JsonFormFields({
