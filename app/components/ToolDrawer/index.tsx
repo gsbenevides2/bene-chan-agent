@@ -1,8 +1,7 @@
 import { Code2, X, Play, CheckCircle, XCircle } from "lucide-react";
 import { useState, useRef, useCallback } from "react";
 import { getApiClient } from "../../utils/client";
-import { parseSchema } from "./parseSchema";
-import { ParamFields } from "./ParamFields";
+import { JsonFormFields } from "./JsonFormFields";
 import { ResultValue } from "./ResultValue";
 import { ToolParam, ToolResult } from "./types";
 
@@ -15,60 +14,14 @@ export function ToolDrawer({
   open: boolean;
   onClose: () => void;
 }) {
-  const [paramValues, setParamValues] = useState<Record<string, string>>({});
+  const [paramValues, setParamValues] = useState<Record<string, unknown>>({});
   const [result, setResult] = useState<ToolResult | null>(null);
   const [loading, setLoading] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
-  const handleParamChange = useCallback((key: string, value: string) => {
-    setParamValues((prev) => ({ ...prev, [key]: value }));
+  const handleParamChange = useCallback((data: Record<string, unknown>) => {
+    setParamValues(data);
   }, []);
-
-  function buildArgs(): Record<string, unknown> | undefined {
-    if (!tool) return;
-    const schema = tool.parameters as Record<string, unknown>;
-    const { properties } = parseSchema(schema);
-    if (properties.length === 0) return {};
-
-    const args: Record<string, unknown> = {};
-    let hasValue = false;
-
-    for (const prop of properties) {
-      const raw = paramValues[prop.name];
-      if (!raw && raw !== "") continue;
-      hasValue = true;
-
-      switch (prop.type) {
-        case "number":
-          args[prop.name] = Number(raw);
-          break;
-        case "integer":
-          args[prop.name] = parseInt(raw, 10);
-          break;
-        case "boolean":
-          args[prop.name] = raw === "true";
-          break;
-        case "array":
-          try {
-            args[prop.name] = JSON.parse(raw);
-          } catch {
-            args[prop.name] = raw;
-          }
-          break;
-        case "object":
-          try {
-            args[prop.name] = JSON.parse(raw);
-          } catch {
-            args[prop.name] = raw;
-          }
-          break;
-        default:
-          args[prop.name] = raw;
-      }
-    }
-
-    return hasValue ? args : {};
-  }
 
   async function handleCall() {
     if (!tool) return;
@@ -78,7 +31,7 @@ export function ToolDrawer({
       const api = getApiClient();
       const res = await api.tools["call"].post({
         name: tool.name,
-        args: buildArgs(),
+        args: Object.keys(paramValues).length > 0 ? paramValues : undefined,
         serverId: tool.source === "mcp" ? tool.serverId : undefined,
       });
       setResult(
@@ -151,9 +104,9 @@ export function ToolDrawer({
               Parâmetros
             </h3>
             {tool?.parameters ? (
-              <ParamFields
+              <JsonFormFields
                 schema={tool?.parameters as Record<string, unknown>}
-                values={paramValues}
+                data={paramValues}
                 onChange={handleParamChange}
               />
             ) : null}
